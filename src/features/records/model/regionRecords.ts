@@ -1,0 +1,58 @@
+import type { RegionRecord } from "./types";
+
+export const regionRecords: RegionRecord[] = [
+  {
+    id: "seoul-ikseon",
+    regionCode: "11010",
+    regionName: "종로구",
+    title: "익선동 한옥 골목",
+    description: "짧은 산책 코스와 다시 가고 싶은 카페를 함께 메모했습니다.",
+    date: "2026-04-14",
+    tags: ["카페", "산책", "한옥"],
+  },
+  {
+    id: "seoul-museum-day",
+    regionCode: "11030",
+    regionName: "용산구",
+    title: "국립중앙박물관 오후",
+    description: "전시 동선, 주변 식당 후보, 다음 방문 때 볼 전시를 정리했습니다.",
+    date: "2026-03-22",
+    tags: ["전시", "실내"],
+  },
+  {
+    id: "busan-gwangan",
+    regionCode: "21",
+    regionName: "부산광역시",
+    title: "광안리 야경",
+    description: "해변 산책과 야경 사진 포인트를 저장했습니다.",
+    date: "2025-11-03",
+    tags: ["바다", "야경"],
+  },
+  {
+    id: "jeju-oreum",
+    regionCode: "39",
+    regionName: "제주특별자치도",
+    title: "제주 오름 걷기",
+    description: "오전 방문 기준 날씨와 주차 정보를 남겼습니다.",
+    date: "2025-08-19",
+    tags: ["자연", "걷기"],
+  },
+  {
+    id: "gangwon-sokcho",
+    regionCode: "32",
+    regionName: "강원도",
+    title: "속초 주말 기록",
+    description: "시장, 바다, 숙소 체크인 시간을 지역 메모로 묶었습니다.",
+    date: "2025-05-10",
+    tags: ["시장", "바다"],
+  },
+  {
+    id: "gyeonggi-suwon",
+    regionCode: "31",
+    regionName: "경기도",
+    title: "수원 화성 산책",
+    description: "성곽길과 저녁 식사 후보를 다음 방문용으로 저장했습니다.",
+    date: "2024-10-06",
+    tags: ["역사", "산책"],
+  },
+];

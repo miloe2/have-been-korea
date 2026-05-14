@@ -1,17 +1,33 @@
 import { ArrowLeft } from "lucide-react";
 import { useEffect, useMemo } from "react";
-import { GeoJSON, MapContainer, TileLayer, useMap } from "react-leaflet";
+import {
+  GeoJSON,
+  MapContainer,
+  Marker,
+  TileLayer,
+  useMap,
+  useMapEvents,
+} from "react-leaflet";
 import type { GeoJsonObject } from "geojson";
+import { divIcon } from "leaflet";
+import type { LeafletMouseEvent } from "leaflet";
 import type { LatLngBoundsExpression, Layer, PathOptions } from "leaflet";
 
 import provinceGeoJson from "@/features/records/data/skorea-provinces.geo.json";
 import seoulDistrictGeoJson from "@/features/records/data/seoul-districts.geo.json";
+import type { RegionRecord } from "@/features/records/model/types";
 
 type KoreaMapProps = {
   mapLevel: "korea" | "seoul";
   selectedRegionCode: string | undefined;
   regionRecordCounts: Record<string, number>;
+  records: RegionRecord[];
+  selectedRecordId: string | undefined;
+  draftPosition: [number, number] | undefined;
+  isPickingLocation: boolean;
   onSelectRegion: (regionCode: string) => void;
+  onSelectRecord: (recordId: string) => void;
+  onPickLocation: (position: [number, number]) => void;
   onBackToKorea: () => void;
 };
 
@@ -45,35 +61,37 @@ const KOREA_BOUNDS: LatLngBoundsExpression = [
   [33.0, 124.4],
   [38.8, 132.1],
 ];
+const KOREA_DEFAULT_PAN_OFFSET: [number, number] = [-40, 0];
 const SELECTED_STYLE: PathOptions = {
-  color: "#7f1d1d",
-  fillColor: "#dc2626",
+  color: "#111111",
+  fillColor: "#111111",
   fillOpacity: 0.62,
   opacity: 1,
   weight: 3,
 };
 const RECORDED_STYLE: PathOptions = {
-  color: "#065f46",
-  fillColor: "#047857",
+  color: "#0f766e",
+  fillColor: "#14b8a6",
   fillOpacity: 0.42,
   opacity: 0.95,
   weight: 2,
 };
 const DEFAULT_STYLE: PathOptions = {
-  color: "#57534e",
-  fillColor: "#d6d3d1",
+  color: "#7b7b7b",
+  fillColor: "#f2f2f2",
   fillOpacity: 0.24,
   opacity: 0.7,
   weight: 1.3,
 };
 const HOVER_STYLE: PathOptions = {
-  color: "#b91c1c",
-  fillColor: "#f87171",
+  color: "#111111",
+  fillColor: "#d4d4d4",
   fillOpacity: 0.55,
   opacity: 1,
   weight: 3,
 };
 const MAP_LANGUAGE = "en";
+const SEOUL_CLUSTER_POSITION: [number, number] = [37.56, 126.99];
 
 function getFeaturePolygons(feature: ProvinceFeature): PolygonCoordinates[] {
   if (feature.geometry.type === "Polygon") {
@@ -171,6 +189,63 @@ function isStyledLayer(layer: Layer): layer is StyledLayer {
   );
 }
 
+function escapeHtml(value: string) {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;");
+}
+
+function createRecordIcon(record: RegionRecord, isSelected: boolean) {
+  const imageUrl = escapeHtml(record.imageUrl);
+
+  return divIcon({
+    className: "record-map-marker",
+    html: `<div class="record-map-dot${isSelected ? " is-selected" : ""}" style="--record-image: url('${imageUrl}')"></div>`,
+    iconAnchor: [23, 23],
+    iconSize: [46, 46],
+  });
+}
+
+function createClusterIcon(count: number) {
+  return divIcon({
+    className: "record-map-marker",
+    html: `<div class="record-map-cluster">${count}</div>`,
+    iconAnchor: [24, 24],
+    iconSize: [48, 48],
+  });
+}
+
+function createDraftIcon() {
+  return divIcon({
+    className: "record-map-marker",
+    html: `<div class="record-map-draft-dot"></div>`,
+    iconAnchor: [12, 12],
+    iconSize: [24, 24],
+  });
+}
+
+function PickLocationEvents({
+  enabled,
+  onPickLocation,
+}: {
+  enabled: boolean;
+  onPickLocation: (position: [number, number]) => void;
+}) {
+  useMapEvents({
+    click: (event: LeafletMouseEvent) => {
+      if (!enabled) {
+        return;
+      }
+
+      onPickLocation([event.latlng.lat, event.latlng.lng]);
+    },
+  });
+
+  return null;
+}
+
 function FitMapToLevel({ mapLevel }: { mapLevel: KoreaMapProps["mapLevel"] }) {
   const map = useMap();
 
@@ -181,7 +256,10 @@ function FitMapToLevel({ mapLevel }: { mapLevel: KoreaMapProps["mapLevel"] }) {
       animate: false,
       padding: [18, 18],
     });
-    map.setZoom(map.getZoom() + 1, { animate: false });
+
+    if (mapLevel === "korea") {
+      map.panBy(KOREA_DEFAULT_PAN_OFFSET, { animate: false });
+    }
   }, [map, mapLevel]);
 
   return null;
@@ -191,7 +269,13 @@ export function KoreaMap({
   mapLevel,
   selectedRegionCode,
   regionRecordCounts,
+  records,
+  selectedRecordId,
+  draftPosition,
+  isPickingLocation,
   onSelectRegion,
+  onSelectRecord,
+  onPickLocation,
   onBackToKorea,
 }: KoreaMapProps) {
   const activeGeoJson = useMemo(
@@ -204,19 +288,28 @@ export function KoreaMap({
   const mapTitle =
     mapLevel === "seoul" ? "Seoul District Map" : "South Korea Province Map";
   const geoJsonKey = `${mapLevel}-${selectedRegionCode ?? "none"}`;
+  const seoulRecords = records.filter((record) => record.regionCode.startsWith("11"));
+  const markerRecords =
+    mapLevel === "seoul"
+      ? seoulRecords
+      : records.filter((record) => !record.regionCode.startsWith("11"));
+  const selectedRecord =
+    records.find((record) => record.id === selectedRecordId) ?? records[0];
 
   return (
-    <div className="rounded-lg border border-stone-300 bg-white p-3 sm:p-5">
-      <div className="mb-3 flex min-h-10 items-center justify-between gap-3">
+    <div className="overflow-hidden rounded-[18px] border border-[var(--color-border)] bg-[var(--color-card-bg)] shadow-[var(--shadow-card)]">
+      <div className="flex min-h-[59px] items-center justify-between gap-3 border-b border-[var(--color-border-soft)] px-4 py-3">
         <div>
-          <p className="text-sm font-bold uppercase text-emerald-800">
-            {mapLevel === "seoul" ? "Si-Gun-Gu" : "Province"}
+          <h3 className="text-[17px] font-semibold text-[var(--color-text)]">
+            방문 지도
+          </h3>
+          <p className="mt-0.5 text-xs text-[var(--color-muted)]">
+            지도 클릭으로 lat/lng 저장
           </p>
-          <h3 className="text-xl font-semibold text-stone-950">{mapTitle}</h3>
         </div>
         {mapLevel === "seoul" ? (
           <button
-            className="inline-flex h-10 items-center gap-2 rounded-lg border border-stone-300 bg-white px-3 text-sm font-semibold text-stone-700 transition hover:border-stone-400 hover:bg-stone-50"
+            className="inline-flex h-9 items-center gap-2 rounded-full border border-[var(--color-border)] bg-[var(--color-card-bg)] px-3 text-xs font-bold text-[var(--color-text)] transition hover:bg-[var(--color-chip-bg)]"
             type="button"
             onClick={onBackToKorea}
           >
@@ -227,9 +320,32 @@ export function KoreaMap({
       </div>
 
       <div
-        className="h-[430px] overflow-hidden rounded-lg border border-stone-200 bg-stone-100 sm:h-[560px]"
+        className="relative h-[640px] overflow-hidden bg-[linear-gradient(145deg,var(--color-map-bg-end)_0%,var(--color-map-bg-start)_100%)]"
         aria-label={mapTitle}
       >
+        <div className="pointer-events-none absolute left-3.5 right-3.5 top-3.5 z-[450] grid gap-2">
+          <div className="flex h-[42px] items-center gap-2 rounded-[13px] border border-[var(--color-border)] bg-[var(--color-panel-bg)] px-3 text-sm shadow-[0_10px_22px_rgba(15,15,15,0.08)]">
+            <span className="font-bold text-[var(--color-text)]">⌕</span>
+            <span className="text-[var(--color-muted)]">
+              {isPickingLocation ? "지도에서 위치를 클릭하세요" : "지도에서 위치 찍기"}
+            </span>
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            <span className="rounded-full bg-[var(--color-text)] px-2.5 py-1.5 text-[11px] font-extrabold text-[var(--color-card-bg)]">
+              {selectedRecord?.regionName ?? "지역 선택"}
+            </span>
+            {selectedRecord ? (
+              <>
+                <span className="rounded-full border border-[var(--color-border)] bg-[var(--color-panel-bg)] px-2.5 py-1.5 text-[11px] font-extrabold text-[var(--color-chip-text)]">
+                  lat {selectedRecord.lat.toFixed(3)}
+                </span>
+                <span className="rounded-full border border-[var(--color-border)] bg-[var(--color-panel-bg)] px-2.5 py-1.5 text-[11px] font-extrabold text-[var(--color-chip-text)]">
+                  lng {selectedRecord.lng.toFixed(3)}
+                </span>
+              </>
+            ) : null}
+          </div>
+        </div>
         <MapContainer
           className="h-full w-full"
           center={KOREA_CENTER}
@@ -244,6 +360,10 @@ export function KoreaMap({
             url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
           />
           <FitMapToLevel mapLevel={mapLevel} />
+          <PickLocationEvents
+            enabled={isPickingLocation}
+            onPickLocation={onPickLocation}
+          />
           <GeoJSON
             key={geoJsonKey}
             data={activeGeoJson}
@@ -291,22 +411,54 @@ export function KoreaMap({
               });
             }}
           />
+          {mapLevel === "korea" && seoulRecords.length > 1 ? (
+            <Marker
+              eventHandlers={{
+                click: () => {
+                  onSelectRegion("11");
+                  onSelectRecord(seoulRecords[0].id);
+                },
+              }}
+              icon={createClusterIcon(seoulRecords.length)}
+              position={SEOUL_CLUSTER_POSITION}
+            />
+          ) : null}
+          {markerRecords.map((record) => (
+            <Marker
+              key={record.id}
+              eventHandlers={{
+                click: () => {
+                  onSelectRegion(record.regionCode);
+                  onSelectRecord(record.id);
+                },
+              }}
+              icon={createRecordIcon(record, record.id === selectedRecordId)}
+              position={[record.lat, record.lng]}
+            />
+          ))}
+          {draftPosition ? (
+            <Marker icon={createDraftIcon()} position={draftPosition} />
+          ) : null}
         </MapContainer>
-      </div>
-
-      <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-sm text-stone-600">
-        <span className="inline-flex items-center gap-2">
-          <span className="size-3 rounded-sm bg-emerald-700" aria-hidden="true" />
-          Has records
-        </span>
-        <span className="inline-flex items-center gap-2">
-          <span className="size-3 rounded-sm bg-red-600" aria-hidden="true" />
-          Selected
-        </span>
-        <span className="inline-flex items-center gap-2">
-          <span className="size-3 rounded-sm bg-stone-300" aria-hidden="true" />
-          No records
-        </span>
+        {selectedRecord ? (
+          <article className="absolute bottom-4 left-4 right-4 z-[450] grid grid-cols-[74px_minmax(0,1fr)] gap-3 rounded-2xl border border-[var(--color-border)] bg-[var(--color-panel-bg)] p-2.5 shadow-[var(--shadow-panel)]">
+            <div
+              className="min-h-[74px] rounded-xl bg-cover bg-center"
+              style={{ backgroundImage: `url(${selectedRecord.imageUrl})` }}
+            />
+            <div className="min-w-0">
+              <small className="block text-[11px] font-black text-[var(--color-accent)]">
+                SELECTED PIN
+              </small>
+              <strong className="mt-1 block truncate text-[15px] font-bold text-[var(--color-text)]">
+                {selectedRecord.title}
+              </strong>
+              <p className="mt-1 line-clamp-2 text-xs leading-5 text-[var(--color-muted)]">
+                {selectedRecord.description}
+              </p>
+            </div>
+          </article>
+        ) : null}
       </div>
     </div>
   );

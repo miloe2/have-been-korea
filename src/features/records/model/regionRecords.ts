@@ -8,6 +8,11 @@ export const regionRecords: RegionRecord[] = [
     title: "익선동 한옥 골목",
     description: "짧은 산책 코스와 다시 가고 싶은 카페를 함께 메모했습니다.",
     date: "2026-04-14",
+    lat: 37.5724,
+    lng: 126.9898,
+    imageUrl:
+      "https://images.unsplash.com/photo-1517154421773-0529f29ea451?auto=format&fit=crop&w=600&q=80",
+    sourceLabel: "Upload",
     tags: ["카페", "산책", "한옥"],
   },
   {
@@ -17,6 +22,11 @@ export const regionRecords: RegionRecord[] = [
     title: "국립중앙박물관 오후",
     description: "전시 동선, 주변 식당 후보, 다음 방문 때 볼 전시를 정리했습니다.",
     date: "2026-03-22",
+    lat: 37.5238,
+    lng: 126.9804,
+    imageUrl:
+      "https://images.unsplash.com/photo-1538485399081-7191377e8241?auto=format&fit=crop&w=600&q=80",
+    sourceLabel: "Upload",
     tags: ["전시", "실내"],
   },
   {
@@ -26,6 +36,11 @@ export const regionRecords: RegionRecord[] = [
     title: "광안리 야경",
     description: "해변 산책과 야경 사진 포인트를 저장했습니다.",
     date: "2025-11-03",
+    lat: 35.1532,
+    lng: 129.1186,
+    imageUrl:
+      "https://images.unsplash.com/photo-1601621915196-2621bfb0cd6e?auto=format&fit=crop&w=600&q=80",
+    sourceLabel: "Kakao later",
     tags: ["바다", "야경"],
   },
   {
@@ -35,6 +50,11 @@ export const regionRecords: RegionRecord[] = [
     title: "제주 오름 걷기",
     description: "오전 방문 기준 날씨와 주차 정보를 남겼습니다.",
     date: "2025-08-19",
+    lat: 33.4589,
+    lng: 126.9425,
+    imageUrl:
+      "https://images.unsplash.com/photo-1548115184-bc6544d06a58?auto=format&fit=crop&w=600&q=80",
+    sourceLabel: "Instagram later",
     tags: ["자연", "걷기"],
   },
   {
@@ -44,6 +64,11 @@ export const regionRecords: RegionRecord[] = [
     title: "속초 주말 기록",
     description: "시장, 바다, 숙소 체크인 시간을 지역 메모로 묶었습니다.",
     date: "2025-05-10",
+    lat: 38.2044,
+    lng: 128.5912,
+    imageUrl:
+      "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=600&q=80",
+    sourceLabel: "Upload",
     tags: ["시장", "바다"],
   },
   {
@@ -53,6 +78,11 @@ export const regionRecords: RegionRecord[] = [
     title: "수원 화성 산책",
     description: "성곽길과 저녁 식사 후보를 다음 방문용으로 저장했습니다.",
     date: "2024-10-06",
+    lat: 37.2871,
+    lng: 127.0116,
+    imageUrl:
+      "https://images.unsplash.com/photo-1578645510447-e20b4311e3ce?auto=format&fit=crop&w=600&q=80",
+    sourceLabel: "Upload",
     tags: ["역사", "산책"],
   },
 ];

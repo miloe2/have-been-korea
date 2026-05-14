@@ -1,0 +1,49 @@
+:root {
+  --color-page-bg: #ffffff;
+  --color-card-bg: #ffffff;
+  --color-panel-bg: rgba(255, 255, 255, 0.96);
+  --color-border: #e8e8e8;
+  --color-border-soft: #f2f2f2;
+  --color-text: #111111;
+  --color-muted: #6f6f6f;
+  --color-subdued: #4f4f4f;
+  --color-chip-bg: #f7f7f7;
+  --color-chip-text: #111111;
+  --color-accent: #111111;
+  --color-cluster: #111111;
+  --color-visited: #0f766e;
+  --color-visited-fill: rgba(20, 184, 166, 0.22);
+  --color-visited-glow: rgba(15, 118, 110, 0.1);
+  --color-badge-bg: #f7f7f7;
+  --color-badge-text: #111111;
+  --color-map-bg-start: #f7f9fd;
+  --color-map-bg-end: #edf4ff;
+  --color-grid-line: rgba(2, 74, 216, 0.06);
+  --shadow-card: 0 1px 2px rgba(15, 15, 15, 0.05);
+  --shadow-panel: 0 8px 24px rgba(15, 15, 15, 0.07);
+}
+
+body.theme-dark {
+  --color-page-bg: #0f172a;
+  --color-card-bg: #1e293b;
+  --color-panel-bg: rgba(30, 41, 59, 0.96);
+  --color-border: #334155;
+  --color-border-soft: #334155;
+  --color-text: #f8fafc;
+  --color-muted: #d1d5db;
+  --color-subdued: #e2e8f0;
+  --color-chip-bg: #334155;
+  --color-chip-text: #f8fafc;
+  --color-accent: #f87171;
+  --color-cluster: #ef4444;
+  --color-visited: #99f6e4;
+  --color-visited-fill: rgba(153, 246, 228, 0.22);
+  --color-visited-glow: rgba(153, 246, 228, 0.15);
+  --color-badge-bg: #134e4a;
+  --color-badge-text: #ccfbf1;
+  --color-map-bg-start: #334155;
+  --color-map-bg-end: #0f172a;
+  --color-grid-line: rgba(255, 255, 255, 0.1);
+  --shadow-card: 0 10px 28px rgba(0, 0, 0, 0.24);
+  --shadow-panel: 0 18px 36px rgba(0, 0, 0, 0.34);
+}

@@ -1,5 +1,5 @@
-import { ArrowLeft } from "lucide-react";
-import { useEffect, useMemo } from "react";
+import { ArrowLeft, X } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import {
   GeoJSON,
   MapContainer,
@@ -25,9 +25,12 @@ type KoreaMapProps = {
   selectedRecordId: string | undefined;
   draftPosition: [number, number] | undefined;
   isPickingLocation: boolean;
+  isDraftLocationReady: boolean;
   onSelectRegion: (regionCode: string) => void;
   onSelectRecord: (recordId: string) => void;
   onPickLocation: (position: [number, number]) => void;
+  onConfirmLocation: () => void;
+  onCancelPickingLocation: () => void;
   onBackToKorea: () => void;
 };
 
@@ -61,13 +64,13 @@ const KOREA_BOUNDS: LatLngBoundsExpression = [
   [33.0, 124.4],
   [38.8, 132.1],
 ];
-const KOREA_DEFAULT_PAN_OFFSET: [number, number] = [-40, 0];
+const KOREA_DEFAULT_PAN_OFFSET: [number, number] = [0, 0];
 const SELECTED_STYLE: PathOptions = {
-  color: "#111111",
-  fillColor: "#111111",
-  fillOpacity: 0.62,
+  color: "#0f766e",
+  fillColor: "#14b8a6",
+  fillOpacity: 0.3,
   opacity: 1,
-  weight: 3,
+  weight: 2.4,
 };
 const RECORDED_STYLE: PathOptions = {
   color: "#0f766e",
@@ -251,15 +254,28 @@ function FitMapToLevel({ mapLevel }: { mapLevel: KoreaMapProps["mapLevel"] }) {
 
   useEffect(() => {
     const bounds = mapLevel === "seoul" ? seoulBounds : KOREA_BOUNDS;
+    const fitMap = () => {
+      map.invalidateSize();
+      map.fitBounds(bounds, {
+        animate: false,
+        padding: [18, 18],
+      });
 
-    map.fitBounds(bounds, {
-      animate: false,
-      padding: [18, 18],
-    });
+      if (mapLevel === "korea") {
+        map.panBy(KOREA_DEFAULT_PAN_OFFSET, { animate: false });
+      }
+    };
+    const frameId = window.requestAnimationFrame(fitMap);
+    const timeoutId = window.setTimeout(fitMap, 180);
+    const observer = new ResizeObserver(fitMap);
 
-    if (mapLevel === "korea") {
-      map.panBy(KOREA_DEFAULT_PAN_OFFSET, { animate: false });
-    }
+    observer.observe(map.getContainer());
+
+    return () => {
+      window.cancelAnimationFrame(frameId);
+      window.clearTimeout(timeoutId);
+      observer.disconnect();
+    };
   }, [map, mapLevel]);
 
   return null;
@@ -273,9 +289,12 @@ export function KoreaMap({
   selectedRecordId,
   draftPosition,
   isPickingLocation,
+  isDraftLocationReady,
   onSelectRegion,
   onSelectRecord,
   onPickLocation,
+  onConfirmLocation,
+  onCancelPickingLocation,
   onBackToKorea,
 }: KoreaMapProps) {
   const activeGeoJson = useMemo(
@@ -295,21 +314,22 @@ export function KoreaMap({
       : records.filter((record) => !record.regionCode.startsWith("11"));
   const selectedRecord =
     records.find((record) => record.id === selectedRecordId) ?? records[0];
+  const [hiddenRecordCardId, setHiddenRecordCardId] = useState<string | undefined>();
+  const shouldShowSelectedRecordCard =
+    selectedRecord &&
+    !isPickingLocation &&
+    selectedRecord.id !== hiddenRecordCardId;
+  const shouldShowPickLocationNotice = isPickingLocation && !draftPosition;
 
   return (
-    <div className="overflow-hidden rounded-[18px] border border-[var(--color-border)] bg-[var(--color-card-bg)] shadow-[var(--shadow-card)]">
-      <div className="flex min-h-[59px] items-center justify-between gap-3 border-b border-[var(--color-border-soft)] px-4 py-3">
-        <div>
-          <h3 className="text-[17px] font-semibold text-[var(--color-text)]">
-            방문 지도
-          </h3>
-          <p className="mt-0.5 text-xs text-[var(--color-muted)]">
-            지도 클릭으로 lat/lng 저장
-          </p>
-        </div>
+    <div className="h-full overflow-hidden bg-[var(--color-card-bg)] lg:rounded-[18px] lg:border lg:border-[var(--color-border)] lg:shadow-[var(--shadow-card)]">
+      <div
+        className="relative h-full min-h-0 overflow-hidden bg-[linear-gradient(145deg,var(--color-map-bg-end)_0%,var(--color-map-bg-start)_100%)] lg:h-[640px]"
+        aria-label={mapTitle}
+      >
         {mapLevel === "seoul" ? (
           <button
-            className="inline-flex h-9 items-center gap-2 rounded-full border border-[var(--color-border)] bg-[var(--color-card-bg)] px-3 text-xs font-bold text-[var(--color-text)] transition hover:bg-[var(--color-chip-bg)]"
+            className="absolute left-3.5 top-3.5 z-[460] inline-flex h-9 items-center gap-2 rounded-full border border-[var(--color-border)] bg-[var(--color-card-bg)] px-3 text-xs font-bold text-[var(--color-text)] shadow-[0_10px_22px_rgba(15,15,15,0.08)] transition hover:bg-[var(--color-chip-bg)]"
             type="button"
             onClick={onBackToKorea}
           >
@@ -317,42 +337,31 @@ export function KoreaMap({
             Korea
           </button>
         ) : null}
-      </div>
-
-      <div
-        className="relative h-[640px] overflow-hidden bg-[linear-gradient(145deg,var(--color-map-bg-end)_0%,var(--color-map-bg-start)_100%)]"
-        aria-label={mapTitle}
-      >
-        <div className="pointer-events-none absolute left-3.5 right-3.5 top-3.5 z-[450] grid gap-2">
-          <div className="flex h-[42px] items-center gap-2 rounded-[13px] border border-[var(--color-border)] bg-[var(--color-panel-bg)] px-3 text-sm shadow-[0_10px_22px_rgba(15,15,15,0.08)]">
-            <span className="font-bold text-[var(--color-text)]">⌕</span>
-            <span className="text-[var(--color-muted)]">
-              {isPickingLocation ? "지도에서 위치를 클릭하세요" : "지도에서 위치 찍기"}
+        {shouldShowPickLocationNotice ? (
+          <div
+            className={`absolute left-3 right-3 z-[455] flex min-h-12 items-center justify-between gap-3 rounded-2xl border border-[var(--color-border)] bg-[var(--color-panel-bg)] px-3 py-2 shadow-[var(--shadow-panel)] lg:left-4 lg:right-4 ${
+              mapLevel === "seoul" ? "top-14 lg:top-16" : "top-3 lg:top-4"
+            }`}
+          >
+            <span className="text-sm font-extrabold text-[var(--color-text)]">
+              기록할 위치를 지도에서 선택하세요
             </span>
+            <button
+              className="h-8 shrink-0 rounded-full border border-[var(--color-border)] bg-white px-3 text-xs font-extrabold text-[var(--color-text)]"
+              type="button"
+              onClick={onCancelPickingLocation}
+            >
+              취소
+            </button>
           </div>
-          <div className="flex flex-wrap gap-1.5">
-            <span className="rounded-full bg-[var(--color-text)] px-2.5 py-1.5 text-[11px] font-extrabold text-[var(--color-card-bg)]">
-              {selectedRecord?.regionName ?? "지역 선택"}
-            </span>
-            {selectedRecord ? (
-              <>
-                <span className="rounded-full border border-[var(--color-border)] bg-[var(--color-panel-bg)] px-2.5 py-1.5 text-[11px] font-extrabold text-[var(--color-chip-text)]">
-                  lat {selectedRecord.lat.toFixed(3)}
-                </span>
-                <span className="rounded-full border border-[var(--color-border)] bg-[var(--color-panel-bg)] px-2.5 py-1.5 text-[11px] font-extrabold text-[var(--color-chip-text)]">
-                  lng {selectedRecord.lng.toFixed(3)}
-                </span>
-              </>
-            ) : null}
-          </div>
-        </div>
+        ) : null}
         <MapContainer
           className="h-full w-full"
           center={KOREA_CENTER}
-          zoom={7}
+          zoom={6}
+          zoomControl={false}
           minZoom={6}
           maxZoom={13}
-          maxBounds={KOREA_BOUNDS}
           scrollWheelZoom
         >
           <TileLayer
@@ -430,6 +439,7 @@ export function KoreaMap({
                 click: () => {
                   onSelectRegion(record.regionCode);
                   onSelectRecord(record.id);
+                  setHiddenRecordCardId(undefined);
                 },
               }}
               icon={createRecordIcon(record, record.id === selectedRecordId)}
@@ -440,23 +450,51 @@ export function KoreaMap({
             <Marker icon={createDraftIcon()} position={draftPosition} />
           ) : null}
         </MapContainer>
-        {selectedRecord ? (
-          <article className="absolute bottom-4 left-4 right-4 z-[450] grid grid-cols-[74px_minmax(0,1fr)] gap-3 rounded-2xl border border-[var(--color-border)] bg-[var(--color-panel-bg)] p-2.5 shadow-[var(--shadow-panel)]">
+        {isDraftLocationReady ? (
+          <div className="absolute bottom-3 left-3 right-3 z-[460] rounded-2xl border border-[var(--color-border)] bg-[var(--color-panel-bg)] p-3 shadow-[var(--shadow-panel)] lg:bottom-4 lg:left-4 lg:right-4">
+            <div className="flex gap-2">
+              <button
+                className="h-11 flex-1 rounded-xl bg-[var(--color-text)] px-3 text-sm font-extrabold text-[var(--color-card-bg)]"
+                type="button"
+                onClick={onConfirmLocation}
+              >
+                이 위치에 새 기록 작성
+              </button>
+              <button
+                className="h-11 rounded-xl border border-[var(--color-border)] bg-white px-3 text-sm font-extrabold text-[var(--color-text)]"
+                type="button"
+                onClick={onCancelPickingLocation}
+              >
+                취소
+              </button>
+            </div>
+          </div>
+        ) : null}
+        {shouldShowSelectedRecordCard ? (
+          <article className="absolute bottom-3 left-3 right-3 z-[450] grid grid-cols-[58px_minmax(0,1fr)] gap-2.5 rounded-2xl border border-[var(--color-border)] bg-[var(--color-panel-bg)] p-2 shadow-[var(--shadow-panel)] lg:bottom-4 lg:left-4 lg:right-4 lg:grid-cols-[74px_minmax(0,1fr)] lg:gap-3 lg:p-2.5">
             <div
-              className="min-h-[74px] rounded-xl bg-cover bg-center"
+              className="min-h-[58px] rounded-xl bg-cover bg-center lg:min-h-[74px]"
               style={{ backgroundImage: `url(${selectedRecord.imageUrl})` }}
             />
-            <div className="min-w-0">
-              <small className="block text-[11px] font-black text-[var(--color-accent)]">
+            <div className="min-w-0 pr-8">
+              <small className="block text-[10px] font-black text-[var(--color-accent)] lg:text-[11px]">
                 SELECTED PIN
               </small>
-              <strong className="mt-1 block truncate text-[15px] font-bold text-[var(--color-text)]">
+              <strong className="mt-0.5 block truncate text-sm font-bold text-[var(--color-text)] lg:mt-1 lg:text-[15px]">
                 {selectedRecord.title}
               </strong>
-              <p className="mt-1 line-clamp-2 text-xs leading-5 text-[var(--color-muted)]">
+              <p className="mt-0.5 line-clamp-2 text-[11px] leading-4 text-[var(--color-muted)] lg:mt-1 lg:text-xs lg:leading-5">
                 {selectedRecord.description}
               </p>
             </div>
+            <button
+              className="absolute right-2 top-2 grid size-8 place-items-center rounded-full border border-[var(--color-border)] bg-white text-[var(--color-text)] shadow-[0_6px_14px_rgba(15,15,15,0.08)]"
+              type="button"
+              aria-label="선택한 핀 카드 닫기"
+              onClick={() => setHiddenRecordCardId(selectedRecord.id)}
+            >
+              <X size={15} strokeWidth={2.4} aria-hidden="true" />
+            </button>
           </article>
         ) : null}
       </div>

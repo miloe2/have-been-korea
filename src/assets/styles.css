@@ -15,7 +15,9 @@
 
   html {
     min-width: 320px;
+    height: 100%;
     min-height: 100%;
+    overflow: hidden;
     color: var(--color-text);
     background: var(--color-page-bg);
     font-family:
@@ -29,7 +31,9 @@
 
   body {
     min-width: 320px;
+    height: 100%;
     min-height: 100vh;
+    overflow: hidden;
     background: var(--color-page-bg);
   }
 
@@ -64,7 +68,9 @@
   }
 
   #root {
+    height: 100%;
     min-height: 100vh;
+    overflow: hidden;
     isolation: isolate;
   }
 }

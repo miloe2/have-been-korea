@@ -1,49 +1,119 @@
-# TODO
+  # Product Vision
 
-## Next
-- 기록 추가 폼에서 지역 select 제거
-- 기록 저장 시 현재 선택 지역과 지도 클릭 좌표를 사용
-- 기록 추가 중 지도 클릭 UX 정리
-  - `새 기록` 클릭 시 위치 선택 모드 진입
-  - 지도 클릭 시 임시 dot 표시
-  - 좌표 chip에 `lat`, `lng` 표시
-- 저장 전 필수값 정리
-  - 제목
-  - 메모
-  - 사진 URL 또는 이후 파일 업로드
-  - 지도 클릭 좌표
+  Build a Korea travel record map where users can mark places they have visited and save personal memories on top of the map.
 
-## Soon
-- 클릭 좌표가 어느 지역인지 자동 판정
-  - MVP에서는 현재 선택 지역 사용
-  - 이후 GeoJSON point-in-polygon 또는 reverse geocoding 검토
-- 실제 클러스터링 도입
-  - 단일 기록은 원형 썸네일 marker
-  - 여러 기록은 숫자 cluster
-  - 선택된 marker는 얇은 ring 표시
-- 사진 파일 업로드 preview 추가
-  - 현재는 `imageUrl` 입력 방식
+  The core experience should deliberately copy familiar Google Maps / Naver Maps place-detail patterns, then replace the public place content
+  with the user's own travel memories:
+  - Users select or tap a place on the Korea map.
+  - Mobile should feel like a map app bottom sheet opened from a selected POI.
+  - Desktop should closely follow the Google place page layout, with a large photo header, familiar action buttons, tabs, and information sections.
+  - The product twist is not a redesigned map UI. It is the surprise of seeing a very familiar place-detail UI filled with the user's own photos,
+  notes, dates, tags, and location.
+  - Example: tapping Namsan opens a Google/Naver-style place detail view, but the representative image, review-like notes, and updates are the
+  user's saved memories instead of public business data.
 
-## Backend Later
-- `createRecord(input)`를 API 호출로 교체
-  - 현재는 local state append
-  - 이후 `POST /records`
-- 기록 목록을 API에서 가져오도록 변경
-  - 현재 `regionRecords`는 seed data
-  - 이후 `GET /records`
-- 백엔드에서 저장할 기본 필드
-  - `regionCode`
-  - `regionName`
-  - `title`
-  - `description`
-  - `date`
-  - `lat`
-  - `lng`
-  - `imageUrl`
-  - `tags`
+  # TODO
 
-## Later
-- 로그인/사용자별 기록
-- Google/Naver/Kakao/Instagram 소스별 카드 레이아웃
-- 다크모드
-- React Native 확장용 디자인 토큰 정리
+  ## Next
+  - Build a Google/Naver Maps-style personal place detail card for selected pins
+  - Show the selected pin detail as a mobile-friendly bottom sheet
+  - Support a feed-style list of records for the same place or region
+
+  ## Soon
+  - Add photo file upload preview
+    - Current MVP uses `imageUrl`
+  - Add Google Places search/select flow
+    - Search place names with Google Places Text Search or Autocomplete
+    - Let the user choose the real place before saving a record
+    - Save the selected Google place snapshot with the user's photo, memo, and visit date
+    - Render feeds from the saved snapshot first, instead of calling Google again on every feed view
+    - Keep the user's uploaded photo as the primary image
+  - Detect the administrative region from the clicked map coordinate
+    - Use GeoJSON point-in-polygon first
+    - Consider reverse geocoding later if needed
+  - Review nationwide city/district-level GeoJSON expansion
+    - Example: Sokcho, Gangneung, Chuncheon instead of only Gangwon-do
+  - Add real marker clustering
+    - Single record: circular thumbnail marker
+    - Multiple records: numeric cluster marker
+    - Selected marker: subtle ring state
+  - Consider long-press on the map to open `Create record here`
+    - Keep normal tap behavior for map exploration
+
+  ## Deferred
+  - Remove region select from the create form
+    - Defer until coordinate-based region detection is reliable
+  - Save records using only the currently selected region
+    - Risk: region and clicked coordinate can mismatch
+  - Empty-state guidance
+    - Consider adding Incheon Airport as an onboarding/default example
+  - Landmark icons
+  - Source-specific card layouts
+    - Google/Naver/Kakao/Instagram style variants
+  - Social viewing / other users' records
+
+  ## Backend Later
+  - Replace local `createRecord(input)` with API call
+    - Current: local state append
+    - Later: `POST /records`
+  - Load records from API
+    - Current: `regionRecords` seed data
+    - Later: `GET /records`
+  - Backend record fields
+    - `googlePlaceId`
+    - `placeName`
+    - `placeRating`
+    - `placeReviewCount`
+    - `placeAddress`
+    - `placeLat`
+    - `placeLng`
+    - `placeFetchedAt`
+    - `regionCode`
+    - `regionName`
+    - `title`
+    - `description`
+    - `date`
+    - `lat`
+    - `lng`
+    - `imageUrl`
+    - `tags`
+  - Google Places policy check before production
+    - Confirm storage/caching limits for place data snapshots
+    - Show required Google attribution when displaying Google-provided place data
+
+  ## Later
+  - Login / user-specific records
+  - Dark mode
+  - React Native design token cleanup
+
+  ## DONE
+
+  ### 2026-05-16
+  - Mobile-first map layout
+  - Bottom navigation
+  - Seoul district map as initial view
+  - New record location-picking flow
+    - `New record` enters location-pick mode
+    - Map click places a temporary dot
+    - `Create record here` CTA opens the bottom sheet
+  - Create record bottom sheet
+    - Fixed header
+    - Scrollable body
+    - Fixed footer
+  - Required create fields
+    - Title
+    - Memo
+    - Photo URL
+    - Map-click coordinate
+  - Selected pin card
+    - Thumbnail
+    - Title
+    - Description
+    - Close button
+  - Map UX cleanup
+    - Removed Leaflet zoom controls
+    - Removed map bounds lock
+    - Removed unnecessary lat/lng overlays inside the map
+  - Component split
+    - `CreateRecordSheet`
+    - `BottomNav`

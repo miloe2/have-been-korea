@@ -1,4 +1,4 @@
-import { ArrowLeft, X } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import {
   GeoJSON,
@@ -15,7 +15,9 @@ import type { LatLngBoundsExpression, Layer, PathOptions } from "leaflet";
 
 import provinceGeoJson from "@/features/records/data/skorea-provinces.geo.json";
 import seoulDistrictGeoJson from "@/features/records/data/seoul-districts.geo.json";
+import { regionRecords } from "@/features/records/model/regionRecords";
 import type { RegionRecord } from "@/features/records/model/types";
+import { GooglePlacePreview } from "@/features/records/ui/GooglePlacePreview";
 
 type KoreaMapProps = {
   mapLevel: "korea" | "seoul";
@@ -313,7 +315,7 @@ export function KoreaMap({
       ? seoulRecords
       : records.filter((record) => !record.regionCode.startsWith("11"));
   const selectedRecord =
-    records.find((record) => record.id === selectedRecordId) ?? records[0];
+    records.find((record) => record.id === selectedRecordId) ?? regionRecords[0];
   const [hiddenRecordCardId, setHiddenRecordCardId] = useState<string | undefined>();
   const shouldShowSelectedRecordCard =
     selectedRecord &&
@@ -471,31 +473,10 @@ export function KoreaMap({
           </div>
         ) : null}
         {shouldShowSelectedRecordCard ? (
-          <article className="absolute bottom-3 left-3 right-3 z-[450] grid grid-cols-[58px_minmax(0,1fr)] gap-2.5 rounded-2xl border border-[var(--color-border)] bg-[var(--color-panel-bg)] p-2 shadow-[var(--shadow-panel)] lg:bottom-4 lg:left-4 lg:right-4 lg:grid-cols-[74px_minmax(0,1fr)] lg:gap-3 lg:p-2.5">
-            <div
-              className="min-h-[58px] rounded-xl bg-cover bg-center lg:min-h-[74px]"
-              style={{ backgroundImage: `url(${selectedRecord.imageUrl})` }}
-            />
-            <div className="min-w-0 pr-8">
-              <small className="block text-[10px] font-black text-[var(--color-accent)] lg:text-[11px]">
-                SELECTED PIN
-              </small>
-              <strong className="mt-0.5 block truncate text-sm font-bold text-[var(--color-text)] lg:mt-1 lg:text-[15px]">
-                {selectedRecord.title}
-              </strong>
-              <p className="mt-0.5 line-clamp-2 text-[11px] leading-4 text-[var(--color-muted)] lg:mt-1 lg:text-xs lg:leading-5">
-                {selectedRecord.description}
-              </p>
-            </div>
-            <button
-              className="absolute right-2 top-2 grid size-8 place-items-center rounded-full border border-[var(--color-border)] bg-white text-[var(--color-text)] shadow-[0_6px_14px_rgba(15,15,15,0.08)]"
-              type="button"
-              aria-label="선택한 핀 카드 닫기"
-              onClick={() => setHiddenRecordCardId(selectedRecord.id)}
-            >
-              <X size={15} strokeWidth={2.4} aria-hidden="true" />
-            </button>
-          </article>
+          <GooglePlacePreview
+            record={selectedRecord}
+            onClose={() => setHiddenRecordCardId(selectedRecord.id)}
+          />
         ) : null}
       </div>
     </div>

@@ -97,6 +97,7 @@ const HOVER_STYLE: PathOptions = {
 };
 const MAP_LANGUAGE = "en";
 const SEOUL_CLUSTER_POSITION: [number, number] = [37.56, 126.99];
+const SEOUL_TO_KOREA_ZOOM = 8;
 
 function getFeaturePolygons(feature: ProvinceFeature): PolygonCoordinates[] {
   if (feature.geometry.type === "Polygon") {
@@ -145,13 +146,19 @@ function getRegionRecordCount(
     return regionRecordCounts[regionCode] ?? 0;
   }
 
-  return Object.entries(regionRecordCounts).reduce((total, [recordRegionCode, count]) => {
-    if (recordRegionCode === regionCode || recordRegionCode.startsWith(regionCode)) {
-      return total + count;
-    }
+  return Object.entries(regionRecordCounts).reduce(
+    (total, [recordRegionCode, count]) => {
+      if (
+        recordRegionCode === regionCode ||
+        recordRegionCode.startsWith(regionCode)
+      ) {
+        return total + count;
+      }
 
-    return total;
-  }, 0);
+      return total;
+    },
+    0,
+  );
 }
 
 function getFeatureRecordCount(
@@ -162,7 +169,9 @@ function getFeatureRecordCount(
 }
 
 function getFeatureLabel(feature: MapFeature) {
-  return MAP_LANGUAGE === "en" ? feature.properties.name_eng : feature.properties.name;
+  return MAP_LANGUAGE === "en"
+    ? feature.properties.name_eng
+    : feature.properties.name;
 }
 
 function getFeatureStyle(
@@ -251,6 +260,26 @@ function PickLocationEvents({
   return null;
 }
 
+function ZoomOutLevelEvents({
+  enabled,
+  onBackToKorea,
+}: {
+  enabled: boolean;
+  onBackToKorea: () => void;
+}) {
+  const map = useMapEvents({
+    zoomend: () => {
+      if (!enabled || map.getZoom() > SEOUL_TO_KOREA_ZOOM) {
+        return;
+      }
+
+      onBackToKorea();
+    },
+  });
+
+  return null;
+}
+
 function FitMapToLevel({ mapLevel }: { mapLevel: KoreaMapProps["mapLevel"] }) {
   const map = useMap();
 
@@ -309,14 +338,19 @@ export function KoreaMap({
   const mapTitle =
     mapLevel === "seoul" ? "Seoul District Map" : "South Korea Province Map";
   const geoJsonKey = `${mapLevel}-${selectedRegionCode ?? "none"}`;
-  const seoulRecords = records.filter((record) => record.regionCode.startsWith("11"));
+  const seoulRecords = records.filter((record) =>
+    record.regionCode.startsWith("11"),
+  );
   const markerRecords =
     mapLevel === "seoul"
       ? seoulRecords
       : records.filter((record) => !record.regionCode.startsWith("11"));
   const selectedRecord =
-    records.find((record) => record.id === selectedRecordId) ?? regionRecords[0];
-  const [hiddenRecordCardId, setHiddenRecordCardId] = useState<string | undefined>();
+    records.find((record) => record.id === selectedRecordId) ??
+    regionRecords[0];
+  const [hiddenRecordCardId, setHiddenRecordCardId] = useState<
+    string | undefined
+  >();
   const shouldShowSelectedRecordCard =
     selectedRecord &&
     !isPickingLocation &&
@@ -374,6 +408,10 @@ export function KoreaMap({
           <PickLocationEvents
             enabled={isPickingLocation}
             onPickLocation={onPickLocation}
+          />
+          <ZoomOutLevelEvents
+            enabled={mapLevel === "seoul"}
+            onBackToKorea={onBackToKorea}
           />
           <GeoJSON
             key={geoJsonKey}

@@ -4,20 +4,32 @@ import {
   GeoJSON,
   MapContainer,
   Marker,
+  Pane,
   TileLayer,
+  Tooltip,
   useMap,
   useMapEvents,
 } from "react-leaflet";
 import type { GeoJsonObject } from "geojson";
-import { divIcon } from "leaflet";
 import type { LeafletMouseEvent } from "leaflet";
 import type { LatLngBoundsExpression, Layer, PathOptions } from "leaflet";
 
 import provinceGeoJson from "@/features/records/data/skorea-provinces.geo.json";
 import seoulDistrictGeoJson from "@/features/records/data/seoul-districts.geo.json";
+import {
+  landmarkTopics,
+  type LandmarkTopic,
+} from "@/features/records/model/landmarkTopics";
 import { regionRecords } from "@/features/records/model/regionRecords";
 import type { RegionRecord } from "@/features/records/model/types";
 import { GooglePlacePreview } from "@/features/records/ui/GooglePlacePreview";
+import {
+  MARKER_PANE_Z_INDEX,
+  createClusterIcon,
+  createDraftIcon,
+  createLandmarkIcon,
+  createRecordIcon,
+} from "@/features/records/ui/mapMarkers";
 
 type KoreaMapProps = {
   mapLevel: "korea" | "seoul";
@@ -31,6 +43,7 @@ type KoreaMapProps = {
   onSelectRegion: (regionCode: string) => void;
   onSelectRecord: (recordId: string) => void;
   onPickLocation: (position: [number, number]) => void;
+  onSelectLandmarkTopic: (landmarkTopic: LandmarkTopic) => void;
   onConfirmLocation: () => void;
   onCancelPickingLocation: () => void;
   onBackToKorea: () => void;
@@ -203,43 +216,6 @@ function isStyledLayer(layer: Layer): layer is StyledLayer {
   );
 }
 
-function escapeHtml(value: string) {
-  return value
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;");
-}
-
-function createRecordIcon(record: RegionRecord, isSelected: boolean) {
-  const imageUrl = escapeHtml(record.imageUrl);
-
-  return divIcon({
-    className: "record-map-marker",
-    html: `<div class="record-map-dot${isSelected ? " is-selected" : ""}" style="--record-image: url('${imageUrl}')"></div>`,
-    iconAnchor: [23, 23],
-    iconSize: [46, 46],
-  });
-}
-
-function createClusterIcon(count: number) {
-  return divIcon({
-    className: "record-map-marker",
-    html: `<div class="record-map-cluster">${count}</div>`,
-    iconAnchor: [24, 24],
-    iconSize: [48, 48],
-  });
-}
-
-function createDraftIcon() {
-  return divIcon({
-    className: "record-map-marker",
-    html: `<div class="record-map-draft-dot"></div>`,
-    iconAnchor: [12, 12],
-    iconSize: [24, 24],
-  });
-}
-
 function PickLocationEvents({
   enabled,
   onPickLocation,
@@ -324,6 +300,7 @@ export function KoreaMap({
   onSelectRegion,
   onSelectRecord,
   onPickLocation,
+  onSelectLandmarkTopic,
   onConfirmLocation,
   onCancelPickingLocation,
   onBackToKorea,
@@ -472,22 +449,54 @@ export function KoreaMap({
               position={SEOUL_CLUSTER_POSITION}
             />
           ) : null}
-          {markerRecords.map((record) => (
-            <Marker
-              key={record.id}
-              eventHandlers={{
-                click: () => {
-                  onSelectRegion(record.regionCode);
-                  onSelectRecord(record.id);
-                  setHiddenRecordCardId(undefined);
-                },
-              }}
-              icon={createRecordIcon(record, record.id === selectedRecordId)}
-              position={[record.lat, record.lng]}
-            />
-          ))}
+          <Pane
+            name="landmark-markers"
+            style={{ zIndex: MARKER_PANE_Z_INDEX.landmark }}
+          >
+            {mapLevel === "seoul"
+              ? landmarkTopics.map((landmarkTopic) => (
+                  <Marker
+                    key={landmarkTopic.id}
+                    eventHandlers={{
+                      click: () => onSelectLandmarkTopic(landmarkTopic),
+                    }}
+                    icon={createLandmarkIcon()}
+                    position={[landmarkTopic.lat, landmarkTopic.lng]}
+                    title={landmarkTopic.title}
+                  >
+                    <Tooltip direction="top" opacity={0.92}>
+                      {landmarkTopic.title}
+                    </Tooltip>
+                  </Marker>
+                ))
+              : null}
+          </Pane>
+          <Pane
+            name="record-markers"
+            style={{ zIndex: MARKER_PANE_Z_INDEX.record }}
+          >
+            {markerRecords.map((record) => (
+              <Marker
+                key={record.id}
+                eventHandlers={{
+                  click: () => {
+                    onSelectRegion(record.regionCode);
+                    onSelectRecord(record.id);
+                    setHiddenRecordCardId(undefined);
+                  },
+                }}
+                icon={createRecordIcon(record, record.id === selectedRecordId)}
+                position={[record.lat, record.lng]}
+              />
+            ))}
+          </Pane>
           {draftPosition ? (
-            <Marker icon={createDraftIcon()} position={draftPosition} />
+            <Pane
+              name="draft-marker"
+              style={{ zIndex: MARKER_PANE_Z_INDEX.draft }}
+            >
+              <Marker icon={createDraftIcon()} position={draftPosition} />
+            </Pane>
           ) : null}
         </MapContainer>
         {isDraftLocationReady ? (

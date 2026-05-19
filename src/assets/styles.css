@@ -119,4 +119,15 @@
       0 0 0 3px rgba(17, 17, 17, 0.24),
       0 10px 20px rgba(15, 15, 15, 0.22);
   }
+
+  .landmark-map-dot {
+    display: grid;
+    width: 36px;
+    height: 36px;
+    place-items: center;
+    border: 3px solid var(--color-card-bg);
+    border-radius: 999px;
+    background: #0f766e;
+    color: var(--color-card-bg);
+  }
 }

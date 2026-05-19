@@ -1,7 +1,8 @@
 import { Plus } from "lucide-react";
-import { type FormEvent, useMemo, useState } from "react";
+import { type FormEvent, useEffect, useMemo, useRef, useState } from "react";
 
 import { BottomNav } from "@/features/navigation/ui/BottomNav";
+import type { LandmarkTopic } from "@/features/records/model/landmarkTopics";
 import { regionRecords } from "@/features/records/model/regionRecords";
 import { selectableRegions } from "@/features/records/model/regions";
 import type { CreateRegionRecordInput } from "@/features/records/model/types";
@@ -28,8 +29,11 @@ export function App() {
     description: "",
     date: new Date().toISOString().slice(0, 10),
     imageUrl: "",
+    photoPreviewUrl: "",
     tags: "",
   });
+  const activePhotoPreviewUrlRef = useRef("");
+  const savedObjectUrlsRef = useRef(new Set<string>());
 
   const regionRecordCounts = useMemo(
     () =>
@@ -42,6 +46,54 @@ export function App() {
   const selectedRegion = selectableRegions.find(
     (region) => region.code === selectedRegionCode,
   );
+
+  useEffect(
+    () => () => {
+      if (activePhotoPreviewUrlRef.current) {
+        URL.revokeObjectURL(activePhotoPreviewUrlRef.current);
+      }
+
+      savedObjectUrlsRef.current.forEach((objectUrl) => {
+        URL.revokeObjectURL(objectUrl);
+      });
+    },
+    [],
+  );
+
+  const updateFormState = (nextFormState: CreateRecordFormState) => {
+    setFormState((currentFormState) => {
+      if (
+        currentFormState.photoPreviewUrl &&
+        currentFormState.photoPreviewUrl !== nextFormState.photoPreviewUrl
+      ) {
+        URL.revokeObjectURL(currentFormState.photoPreviewUrl);
+      }
+
+      activePhotoPreviewUrlRef.current = nextFormState.photoPreviewUrl;
+
+      return nextFormState;
+    });
+  };
+
+  const resetCreateForm = ({ keepPhotoPreview = false } = {}) => {
+    setFormState((currentFormState) => {
+      if (currentFormState.photoPreviewUrl && !keepPhotoPreview) {
+        URL.revokeObjectURL(currentFormState.photoPreviewUrl);
+      }
+
+      activePhotoPreviewUrlRef.current = "";
+
+      return {
+        ...currentFormState,
+        title: "",
+        description: "",
+        imageUrl: "",
+        photoFile: undefined,
+        photoPreviewUrl: "",
+        tags: "",
+      };
+    });
+  };
 
   const handleSelectRegion = (regionCode: string) => {
     setSelectedRegionCode(regionCode);
@@ -86,6 +138,30 @@ export function App() {
     setDraftPosition(position);
   };
 
+  const handleSelectLandmarkTopic = (landmarkTopic: LandmarkTopic) => {
+    setSelectedRegionCode(landmarkTopic.regionCode);
+    setDraftPosition([landmarkTopic.lat, landmarkTopic.lng]);
+    setIsPickingLocation(true);
+    setIsCreateFormOpen(false);
+    setFormState((currentFormState) => {
+      if (currentFormState.photoPreviewUrl) {
+        URL.revokeObjectURL(currentFormState.photoPreviewUrl);
+      }
+
+      activePhotoPreviewUrlRef.current = "";
+
+      return {
+        ...currentFormState,
+        title: landmarkTopic.title,
+        description: "",
+        imageUrl: "",
+        photoFile: undefined,
+        photoPreviewUrl: "",
+        tags: "",
+      };
+    });
+  };
+
   const handleConfirmLocation = () => {
     if (!draftPosition) {
       return;
@@ -99,6 +175,7 @@ export function App() {
     setIsPickingLocation(false);
     setIsCreateFormOpen(false);
     setDraftPosition(undefined);
+    resetCreateForm();
   };
 
   const createRecord = (input: CreateRegionRecordInput) => {
@@ -108,25 +185,26 @@ export function App() {
       sourceLabel: "Upload",
     };
 
+    if (formState.photoPreviewUrl) {
+      savedObjectUrlsRef.current.add(formState.photoPreviewUrl);
+    }
+
     setRecords((currentRecords) => [record, ...currentRecords]);
     setSelectedRecordId(record.id);
     setSelectedRegionCode(record.regionCode);
     setIsPickingLocation(false);
     setIsCreateFormOpen(false);
     setDraftPosition(undefined);
-    setFormState((currentFormState) => ({
-      ...currentFormState,
-      title: "",
-      description: "",
-      imageUrl: "",
-      tags: "",
-    }));
+    resetCreateForm({ keepPhotoPreview: Boolean(formState.photoPreviewUrl) });
   };
 
   const handleCreateRecord = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    if (!selectedRegion || !draftPosition) {
+    const imageUrl =
+      formState.photoPreviewUrl || formState.imageUrl.trim();
+
+    if (!selectedRegion || !draftPosition || !imageUrl) {
       return;
     }
 
@@ -138,7 +216,7 @@ export function App() {
       date: formState.date,
       lat: draftPosition[0],
       lng: draftPosition[1],
-      imageUrl: formState.imageUrl.trim(),
+      imageUrl,
       tags: formState.tags
         .split(",")
         .map((tag) => tag.trim())
@@ -176,10 +254,11 @@ export function App() {
             selectedRecordId={selectedRecordId}
             draftPosition={draftPosition}
             isPickingLocation={isPickingLocation || isCreateFormOpen}
-            isDraftLocationReady={isPickingLocation && Boolean(draftPosition)}
+            isDraftLocationReady={Boolean(draftPosition) && !isCreateFormOpen}
             onSelectRegion={handleSelectRegion}
             onSelectRecord={handleSelectRecord}
             onPickLocation={handlePickLocation}
+            onSelectLandmarkTopic={handleSelectLandmarkTopic}
             onConfirmLocation={handleConfirmLocation}
             onCancelPickingLocation={handleCancelCreateRecord}
             onBackToKorea={handleBackToKorea}
@@ -194,7 +273,7 @@ export function App() {
               selectedRegionName={selectedRegion?.name ?? "지역"}
               onCancel={handleCancelCreateRecord}
               onSubmit={handleCreateRecord}
-              onUpdateForm={setFormState}
+              onUpdateForm={updateFormState}
             />
           ) : null}
         </div>

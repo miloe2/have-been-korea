@@ -1,4 +1,4 @@
-import { X } from "lucide-react";
+import { ImagePlus, Trash2, X } from "lucide-react";
 import type { FormEventHandler } from "react";
 
 export type CreateRecordFormState = {
@@ -6,6 +6,8 @@ export type CreateRecordFormState = {
   description: string;
   date: string;
   imageUrl: string;
+  photoFile?: File;
+  photoPreviewUrl: string;
   tags: string;
 };
 
@@ -26,6 +28,10 @@ export function CreateRecordSheet({
   onSubmit,
   onUpdateForm,
 }: CreateRecordSheetProps) {
+  const hasPhoto = Boolean(
+    formState.photoPreviewUrl || formState.imageUrl.trim(),
+  );
+
   return (
     <form
       className="fixed bottom-0 left-0 right-0 z-[1200] flex max-h-[82vh] flex-col overflow-hidden rounded-t-[18px] border border-[var(--color-border)] bg-[var(--color-card-bg)] shadow-[0_-16px_40px_rgba(15,15,15,0.18)] lg:bottom-4 lg:left-auto lg:right-4 lg:top-4 lg:w-[390px] lg:max-h-none lg:rounded-[18px] lg:shadow-[var(--shadow-card)]"
@@ -78,24 +84,63 @@ export function CreateRecordSheet({
           />
         </label>
 
-        <label className="mb-3 block">
+        <div className="mb-3">
           <span className="mb-1.5 block text-xs font-extrabold text-[var(--color-muted)]">
-            사진 URL
+            사진
           </span>
-          <input
-            className="h-11 w-full rounded-xl border border-[var(--color-border)] bg-white px-3 text-sm text-[var(--color-text)]"
-            required
-            type="url"
-            value={formState.imageUrl}
-            onChange={(event) =>
-              onUpdateForm({
-                ...formState,
-                imageUrl: event.target.value,
-              })
-            }
-            placeholder="https://..."
-          />
-        </label>
+          {formState.photoPreviewUrl || formState.imageUrl ? (
+            <div className="mb-2 overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-chip-bg)]">
+              <img
+                className=" aspect-square w-full object-cover"
+                src={formState.photoPreviewUrl || formState.imageUrl}
+                alt=""
+              />
+            </div>
+          ) : null}
+          <label className="mb-2 flex h-11 cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-[var(--color-border)] bg-white px-3 text-sm font-extrabold text-[var(--color-text)]">
+            <ImagePlus size={17} strokeWidth={2.4} aria-hidden="true" />
+            사진 파일 선택
+            <input
+              className="sr-only"
+              type="file"
+              accept="image/*"
+              onChange={(event) => {
+                const file = event.target.files?.[0];
+
+                if (!file) {
+                  return;
+                }
+
+                onUpdateForm({
+                  ...formState,
+                  imageUrl: "",
+                  photoFile: file,
+                  photoPreviewUrl: URL.createObjectURL(file),
+                });
+                event.target.value = "";
+              }}
+            />
+          </label>
+          <div className="flex gap-2">
+            {hasPhoto ? (
+              <button
+                className="grid size-11 shrink-0 place-items-center rounded-xl border border-[var(--color-border)] bg-white text-[var(--color-text)]"
+                type="button"
+                aria-label="사진 제거"
+                onClick={() =>
+                  onUpdateForm({
+                    ...formState,
+                    imageUrl: "",
+                    photoFile: undefined,
+                    photoPreviewUrl: "",
+                  })
+                }
+              >
+                <Trash2 size={16} strokeWidth={2.4} aria-hidden="true" />
+              </button>
+            ) : null}
+          </div>
+        </div>
 
         <label className="mb-3 block">
           <span className="mb-1.5 block text-xs font-extrabold text-[var(--color-muted)]">
@@ -164,7 +209,7 @@ export function CreateRecordSheet({
       <div className="flex shrink-0 gap-2 border-t border-[var(--color-border-soft)] p-4 pb-[calc(16px_+_env(safe-area-inset-bottom))] lg:pb-4">
         <button
           className="h-11 flex-1 rounded-xl bg-[var(--color-text)] px-3 text-sm font-extrabold text-[var(--color-card-bg)] disabled:cursor-not-allowed disabled:opacity-35"
-          disabled={!draftPosition}
+          disabled={!draftPosition || !hasPhoto}
           type="submit"
         >
           저장

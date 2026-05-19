@@ -16,7 +16,7 @@ export function BottomNav({ onCreateRecord }: BottomNavProps) {
           type="button"
         >
           <MapPinned size={21} strokeWidth={2.2} aria-hidden="true" />
-          지도
+          피드
         </button>
         <button
           className="grid min-h-14 place-items-center gap-1 rounded-xl bg-[var(--color-text)] text-xs font-extrabold text-[var(--color-card-bg)]"

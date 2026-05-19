@@ -5,11 +5,15 @@ import { BottomNav } from "@/features/navigation/ui/BottomNav";
 import type { LandmarkTopic } from "@/features/records/model/landmarkTopics";
 import { regionRecords } from "@/features/records/model/regionRecords";
 import { selectableRegions } from "@/features/records/model/regions";
-import type { CreateRegionRecordInput } from "@/features/records/model/types";
+import type {
+  CreateRegionRecordInput,
+  RegionRecord,
+} from "@/features/records/model/types";
 import {
   CreateRecordSheet,
   type CreateRecordFormState,
 } from "@/features/records/ui/CreateRecordSheet";
+import { GooglePlacePreview } from "@/features/records/ui/GooglePlacePreview";
 import { KoreaMap } from "@/features/records/ui/KoreaMap";
 
 export function App() {
@@ -23,6 +27,7 @@ export function App() {
   );
   const [isPickingLocation, setIsPickingLocation] = useState(false);
   const [isCreateFormOpen, setIsCreateFormOpen] = useState(false);
+  const [isCreatePreviewOpen, setIsCreatePreviewOpen] = useState(false);
   const [draftPosition, setDraftPosition] = useState<[number, number] | undefined>();
   const [formState, setFormState] = useState<CreateRecordFormState>({
     title: "",
@@ -46,6 +51,34 @@ export function App() {
   const selectedRegion = selectableRegions.find(
     (region) => region.code === selectedRegionCode,
   );
+  const createPreviewImageUrl =
+    formState.photoPreviewUrl || formState.imageUrl.trim();
+  const createPreviewTitle = formState.title.trim();
+  const createPreviewDate =
+    formState.date || new Date().toISOString().slice(0, 10);
+  const createPreviewTags = formState.tags
+    .split(",")
+    .map((tag) => tag.trim())
+    .filter(Boolean);
+  const createPreviewRecord: RegionRecord | undefined =
+    selectedRegion &&
+    draftPosition &&
+    createPreviewImageUrl &&
+    createPreviewTitle
+      ? {
+          id: "create-preview",
+          regionCode: selectedRegion.code,
+          regionName: selectedRegion.name,
+          title: createPreviewTitle,
+          description: formState.description.trim() || "아직 메모가 없습니다.",
+          date: createPreviewDate,
+          lat: draftPosition[0],
+          lng: draftPosition[1],
+          imageUrl: createPreviewImageUrl,
+          sourceLabel: "Preview",
+          tags: createPreviewTags,
+        }
+      : undefined;
 
   useEffect(
     () => () => {
@@ -131,6 +164,7 @@ export function App() {
   const handleOpenCreateForm = () => {
     setIsPickingLocation(true);
     setIsCreateFormOpen(false);
+    setIsCreatePreviewOpen(false);
     setDraftPosition(undefined);
   };
 
@@ -143,6 +177,7 @@ export function App() {
     setDraftPosition([landmarkTopic.lat, landmarkTopic.lng]);
     setIsPickingLocation(true);
     setIsCreateFormOpen(false);
+    setIsCreatePreviewOpen(false);
     setFormState((currentFormState) => {
       if (currentFormState.photoPreviewUrl) {
         URL.revokeObjectURL(currentFormState.photoPreviewUrl);
@@ -174,6 +209,7 @@ export function App() {
   const handleCancelCreateRecord = () => {
     setIsPickingLocation(false);
     setIsCreateFormOpen(false);
+    setIsCreatePreviewOpen(false);
     setDraftPosition(undefined);
     resetCreateForm();
   };
@@ -194,6 +230,7 @@ export function App() {
     setSelectedRegionCode(record.regionCode);
     setIsPickingLocation(false);
     setIsCreateFormOpen(false);
+    setIsCreatePreviewOpen(false);
     setDraftPosition(undefined);
     resetCreateForm({ keepPhotoPreview: Boolean(formState.photoPreviewUrl) });
   };
@@ -203,17 +240,18 @@ export function App() {
 
     const imageUrl =
       formState.photoPreviewUrl || formState.imageUrl.trim();
+    const title = formState.title.trim();
 
-    if (!selectedRegion || !draftPosition || !imageUrl) {
+    if (!selectedRegion || !draftPosition || !imageUrl || !title) {
       return;
     }
 
     createRecord({
       regionCode: selectedRegion.code,
       regionName: selectedRegion.name,
-      title: formState.title.trim(),
+      title,
       description: formState.description.trim(),
-      date: formState.date,
+      date: formState.date || new Date().toISOString().slice(0, 10),
       lat: draftPosition[0],
       lng: draftPosition[1],
       imageUrl,
@@ -271,13 +309,23 @@ export function App() {
               draftPosition={draftPosition}
               formState={formState}
               selectedRegionName={selectedRegion?.name ?? "지역"}
+              canPreview={Boolean(createPreviewRecord)}
               onCancel={handleCancelCreateRecord}
+              onPreview={() => setIsCreatePreviewOpen(true)}
               onSubmit={handleCreateRecord}
               onUpdateForm={updateFormState}
             />
           ) : null}
         </div>
       </section>
+      {isCreatePreviewOpen && createPreviewRecord ? (
+        <div className="fixed inset-0 z-[1300]">
+          <GooglePlacePreview
+            record={createPreviewRecord}
+            onClose={() => setIsCreatePreviewOpen(false)}
+          />
+        </div>
+      ) : null}
       <BottomNav onCreateRecord={handleOpenCreateForm} />
     </main>
   );

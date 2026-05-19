@@ -15,7 +15,9 @@ type CreateRecordSheetProps = {
   draftPosition: [number, number] | undefined;
   formState: CreateRecordFormState;
   selectedRegionName: string;
+  canPreview: boolean;
   onCancel: () => void;
+  onPreview: () => void;
   onSubmit: FormEventHandler<HTMLFormElement>;
   onUpdateForm: (formState: CreateRecordFormState) => void;
 };
@@ -24,7 +26,9 @@ export function CreateRecordSheet({
   draftPosition,
   formState,
   selectedRegionName,
+  canPreview,
   onCancel,
+  onPreview,
   onSubmit,
   onUpdateForm,
 }: CreateRecordSheetProps) {
@@ -68,7 +72,7 @@ export function CreateRecordSheet({
 
         <label className="mb-3 block">
           <span className="mb-1.5 block text-xs font-extrabold text-[var(--color-muted)]">
-            제목
+            장소
           </span>
           <input
             className="h-11 w-full rounded-xl border border-[var(--color-border)] bg-white px-3 text-sm text-[var(--color-text)]"
@@ -80,7 +84,7 @@ export function CreateRecordSheet({
                 title: event.target.value,
               })
             }
-            placeholder="성수에서 보낸 오후"
+            placeholder="성수 카페골목"
           />
         </label>
 
@@ -148,7 +152,6 @@ export function CreateRecordSheet({
           </span>
           <textarea
             className="min-h-24 w-full resize-none rounded-xl border border-[var(--color-border)] bg-white px-3 py-2.5 text-sm leading-6 text-[var(--color-text)]"
-            required
             value={formState.description}
             onChange={(event) =>
               onUpdateForm({
@@ -167,7 +170,6 @@ export function CreateRecordSheet({
             </span>
             <input
               className="h-11 w-full rounded-xl border border-[var(--color-border)] bg-white px-3 text-sm text-[var(--color-text)]"
-              required
               type="date"
               value={formState.date}
               onChange={(event) =>
@@ -208,8 +210,16 @@ export function CreateRecordSheet({
 
       <div className="flex shrink-0 gap-2 border-t border-[var(--color-border-soft)] p-4 pb-[calc(16px_+_env(safe-area-inset-bottom))] lg:pb-4">
         <button
+          className="h-11 rounded-xl border border-[var(--color-border)] bg-white px-3 text-sm font-extrabold text-[var(--color-text)] disabled:cursor-not-allowed disabled:opacity-35"
+          disabled={!canPreview}
+          type="button"
+          onClick={onPreview}
+        >
+          미리보기
+        </button>
+        <button
           className="h-11 flex-1 rounded-xl bg-[var(--color-text)] px-3 text-sm font-extrabold text-[var(--color-card-bg)] disabled:cursor-not-allowed disabled:opacity-35"
-          disabled={!draftPosition || !hasPhoto}
+          disabled={!draftPosition || !hasPhoto || !formState.title.trim()}
           type="submit"
         >
           저장

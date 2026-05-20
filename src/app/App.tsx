@@ -29,9 +29,7 @@ export function App() {
     regionRecords[0]?.regionCode ?? "11010",
   );
   const [mapLevel, setMapLevel] = useState<"korea" | "seoul">("seoul");
-  const [selectedRecordId, setSelectedRecordId] = useState<string | undefined>(
-    records[0]?.id,
-  );
+  const [selectedRecordId, setSelectedRecordId] = useState<string | undefined>();
   const [isPickingLocation, setIsPickingLocation] = useState(false);
   const [isCreateFormOpen, setIsCreateFormOpen] = useState(false);
   const [isCreatePreviewOpen, setIsCreatePreviewOpen] = useState(false);

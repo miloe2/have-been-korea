@@ -20,7 +20,6 @@ import {
   landmarkTopics,
   type LandmarkTopic,
 } from "@/features/records/model/landmarkTopics";
-import { regionRecords } from "@/features/records/model/regionRecords";
 import type { RegionRecord } from "@/features/records/model/types";
 import { GoogleFeedCard } from "@/features/records/ui/GoogleFeedCard";
 import {
@@ -322,9 +321,9 @@ export function KoreaMap({
     mapLevel === "seoul"
       ? seoulRecords
       : records.filter((record) => !record.regionCode.startsWith("11"));
-  const selectedRecord =
-    records.find((record) => record.id === selectedRecordId) ??
-    regionRecords[0];
+  const selectedRecord = records.find(
+    (record) => record.id === selectedRecordId,
+  );
   const [hiddenRecordCardId, setHiddenRecordCardId] = useState<
     string | undefined
   >();

@@ -51,20 +51,20 @@ export function CreateRecordSheet({
 
   return (
     <form
-      className="fixed bottom-0 left-0 right-0 z-[1200] flex max-h-[82vh] flex-col overflow-hidden rounded-t-[18px] border border-[var(--color-border)] bg-[var(--color-card-bg)] shadow-[0_-16px_40px_rgba(15,15,15,0.18)] lg:bottom-4 lg:left-auto lg:right-4 lg:top-4 lg:w-[390px] lg:max-h-none lg:rounded-[18px] lg:shadow-[var(--shadow-card)]"
+      className="hbk-surface hbk-card-shadow hbk-create-sheet fixed bottom-0 left-0 right-0 flex flex-col overflow-hidden rounded-t-2xl lg:bottom-4 lg:left-auto lg:right-4 lg:top-4 lg:w-96 lg:max-h-none lg:rounded-2xl"
       onSubmit={onSubmit}
     >
-      <div className="flex shrink-0 items-start justify-between gap-3 border-b border-[var(--color-border-soft)] p-4">
+      <div className="hbk-soft-border flex shrink-0 items-start justify-between gap-3 border-b p-4">
         <div>
-          <strong className="block text-lg font-extrabold text-[var(--color-text)]">
+          <strong className="hbk-text block text-lg font-extrabold">
             새 기록
           </strong>
-          <p className="mt-1 text-sm text-[var(--color-muted)]">
+          <p className="hbk-muted mt-1 text-sm">
             지도에서 위치를 클릭한 뒤 기록을 저장하세요.
           </p>
         </div>
         <button
-          className="grid size-9 shrink-0 place-items-center rounded-full border border-[var(--color-border)] bg-white text-[var(--color-text)]"
+          className="hbk-surface grid size-9 shrink-0 place-items-center rounded-full"
           type="button"
           aria-label="새 기록 닫기"
           onClick={onCancel}
@@ -75,16 +75,16 @@ export function CreateRecordSheet({
 
       <div className="min-h-0 flex-1 overflow-y-auto p-4">
         <div className="mb-3">
-          <span className="mb-1.5 block text-xs font-extrabold text-[var(--color-muted)]">
+          <span className="hbk-muted mb-2 block text-xs font-extrabold">
             지역
           </span>
-          <span className="flex h-11 items-center rounded-xl border border-[var(--color-border)] bg-[var(--color-chip-bg)] px-3 text-sm font-bold text-[var(--color-chip-text)]">
+          <span className="hbk-chip flex h-11 items-center rounded-xl px-3 text-sm font-bold">
             {selectedRegionName}
           </span>
         </div>
 
         <div className="mb-3">
-          <span className="mb-1.5 block text-xs font-extrabold text-[var(--color-muted)]">
+          <span className="hbk-muted mb-2 block text-xs font-extrabold">
             타입
           </span>
           <div className="grid grid-cols-3 gap-2">
@@ -94,10 +94,10 @@ export function CreateRecordSheet({
               return (
                 <button
                   key={type}
-                  className={`flex h-11 items-center justify-center gap-1.5 rounded-xl border px-2 text-xs font-extrabold ${
+                  className={`flex h-11 items-center justify-center gap-2 rounded-xl px-2 text-xs font-extrabold ${
                     isSelected
-                      ? "border-[var(--color-text)] bg-[var(--color-text)] text-[var(--color-card-bg)]"
-                      : "border-[var(--color-border)] bg-white text-[var(--color-text)]"
+                      ? "bg-neutral-950 text-white"
+                      : "hbk-surface"
                   }`}
                   type="button"
                   aria-pressed={isSelected}
@@ -117,11 +117,11 @@ export function CreateRecordSheet({
         </div>
 
         <label className="mb-3 block">
-          <span className="mb-1.5 block text-xs font-extrabold text-[var(--color-muted)]">
+          <span className="hbk-muted mb-2 block text-xs font-extrabold">
             장소
           </span>
           <input
-            className="h-11 w-full rounded-xl border border-[var(--color-border)] bg-white px-3 text-sm text-[var(--color-text)]"
+            className="hbk-surface h-11 w-full rounded-xl px-3 text-sm"
             required
             value={formState.title}
             onChange={(event) =>
@@ -135,19 +135,19 @@ export function CreateRecordSheet({
         </label>
 
         <div className="mb-3">
-          <span className="mb-1.5 block text-xs font-extrabold text-[var(--color-muted)]">
+          <span className="hbk-muted mb-2 block text-xs font-extrabold">
             사진
           </span>
           {formState.photoPreviewUrl || formState.imageUrl ? (
-            <div className="mb-2 overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-chip-bg)]">
+            <div className="hbk-chip mb-2 overflow-hidden rounded-xl">
               <img
-                className=" aspect-square w-full object-cover"
+                className="aspect-square w-full object-cover"
                 src={formState.photoPreviewUrl || formState.imageUrl}
                 alt=""
               />
             </div>
           ) : null}
-          <label className="mb-2 flex h-11 cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-[var(--color-border)] bg-white px-3 text-sm font-extrabold text-[var(--color-text)]">
+          <label className="hbk-surface mb-2 flex h-11 cursor-pointer items-center justify-center gap-2 rounded-xl border-dashed px-3 text-sm font-extrabold">
             <ImagePlus size={17} strokeWidth={2.4} aria-hidden="true" />
             사진 파일 선택
             <input
@@ -174,7 +174,7 @@ export function CreateRecordSheet({
           <div className="flex gap-2">
             {hasPhoto ? (
               <button
-                className="grid size-11 shrink-0 place-items-center rounded-xl border border-[var(--color-border)] bg-white text-[var(--color-text)]"
+                className="hbk-surface grid size-11 shrink-0 place-items-center rounded-xl"
                 type="button"
                 aria-label="사진 제거"
                 onClick={() =>
@@ -193,11 +193,11 @@ export function CreateRecordSheet({
         </div>
 
         <label className="mb-3 block">
-          <span className="mb-1.5 block text-xs font-extrabold text-[var(--color-muted)]">
+          <span className="hbk-muted mb-2 block text-xs font-extrabold">
             메모
           </span>
           <textarea
-            className="min-h-24 w-full resize-none rounded-xl border border-[var(--color-border)] bg-white px-3 py-2.5 text-sm leading-6 text-[var(--color-text)]"
+            className="hbk-surface min-h-24 w-full resize-none rounded-xl px-3 py-3 text-sm leading-6"
             value={formState.description}
             onChange={(event) =>
               onUpdateForm({
@@ -211,11 +211,11 @@ export function CreateRecordSheet({
 
         <div className="mb-3 grid grid-cols-2 gap-3">
           <label className="block">
-            <span className="mb-1.5 block text-xs font-extrabold text-[var(--color-muted)]">
+            <span className="hbk-muted mb-2 block text-xs font-extrabold">
               날짜
             </span>
             <input
-              className="h-11 w-full rounded-xl border border-[var(--color-border)] bg-white px-3 text-sm text-[var(--color-text)]"
+              className="hbk-surface h-11 w-full rounded-xl px-3 text-sm"
               type="date"
               value={formState.date}
               onChange={(event) =>
@@ -227,11 +227,11 @@ export function CreateRecordSheet({
             />
           </label>
           <label className="block">
-            <span className="mb-1.5 block text-xs font-extrabold text-[var(--color-muted)]">
+            <span className="hbk-muted mb-2 block text-xs font-extrabold">
               태그
             </span>
             <input
-              className="h-11 w-full rounded-xl border border-[var(--color-border)] bg-white px-3 text-sm text-[var(--color-text)]"
+              className="hbk-surface h-11 w-full rounded-xl px-3 text-sm"
               value={formState.tags}
               onChange={(event) =>
                 onUpdateForm({
@@ -244,19 +244,19 @@ export function CreateRecordSheet({
           </label>
         </div>
 
-        <div className="flex flex-wrap gap-1.5">
-          <span className="rounded-full bg-[var(--color-chip-bg)] px-2.5 py-1.5 text-xs font-bold text-[var(--color-chip-text)]">
+        <div className="flex flex-wrap gap-2">
+          <span className="hbk-chip rounded-full px-3 py-2 text-xs font-bold">
             lat {draftPosition ? draftPosition[0].toFixed(3) : "-"}
           </span>
-          <span className="rounded-full bg-[var(--color-chip-bg)] px-2.5 py-1.5 text-xs font-bold text-[var(--color-chip-text)]">
+          <span className="hbk-chip rounded-full px-3 py-2 text-xs font-bold">
             lng {draftPosition ? draftPosition[1].toFixed(3) : "-"}
           </span>
         </div>
       </div>
 
-      <div className="flex shrink-0 gap-2 border-t border-[var(--color-border-soft)] p-4 pb-[calc(16px_+_env(safe-area-inset-bottom))] lg:pb-4">
+      <div className="hbk-soft-border hbk-safe-footer flex shrink-0 gap-2 border-t p-4 lg:pb-4">
         <button
-          className="h-11 rounded-xl border border-[var(--color-border)] bg-white px-3 text-sm font-extrabold text-[var(--color-text)] disabled:cursor-not-allowed disabled:opacity-35"
+          className="hbk-surface h-11 rounded-xl px-3 text-sm font-extrabold disabled:cursor-not-allowed disabled:opacity-35"
           disabled={!canPreview}
           type="button"
           onClick={onPreview}
@@ -264,14 +264,14 @@ export function CreateRecordSheet({
           미리보기
         </button>
         <button
-          className="h-11 flex-1 rounded-xl bg-[var(--color-text)] px-3 text-sm font-extrabold text-[var(--color-card-bg)] disabled:cursor-not-allowed disabled:opacity-35"
+          className="h-11 flex-1 rounded-xl bg-neutral-950 px-3 text-sm font-extrabold text-white disabled:cursor-not-allowed disabled:opacity-35"
           disabled={!draftPosition || !hasPhoto || !formState.title.trim()}
           type="submit"
         >
           저장
         </button>
         <button
-          className="h-11 rounded-xl border border-[var(--color-border)] bg-white px-3 text-sm font-extrabold text-[var(--color-text)]"
+          className="hbk-surface h-11 rounded-xl px-3 text-sm font-extrabold"
           type="button"
           onClick={onCancel}
         >

@@ -335,14 +335,14 @@ export function KoreaMap({
   const shouldShowPickLocationNotice = isPickingLocation && !draftPosition;
 
   return (
-    <div className="h-full overflow-hidden bg-[var(--color-card-bg)] lg:rounded-[18px] lg:border lg:border-[var(--color-border)] lg:shadow-[var(--shadow-card)]">
+    <div className="hbk-surface hbk-card-shadow h-full overflow-hidden lg:rounded-2xl">
       <div
-        className="relative h-full min-h-0 overflow-hidden bg-[linear-gradient(145deg,var(--color-map-bg-end)_0%,var(--color-map-bg-start)_100%)] lg:h-[640px]"
+        className="hbk-map-canvas relative h-full min-h-0 overflow-hidden"
         aria-label={mapTitle}
       >
         {mapLevel === "seoul" ? (
           <button
-            className="absolute left-3.5 top-3.5 z-[460] inline-flex h-9 items-center gap-2 rounded-full border border-[var(--color-border)] bg-[var(--color-card-bg)] px-3 text-xs font-bold text-[var(--color-text)] shadow-[0_10px_22px_rgba(15,15,15,0.08)] transition hover:bg-[var(--color-chip-bg)]"
+            className="hbk-surface hbk-map-control-layer absolute left-4 top-4 inline-flex h-9 items-center gap-2 rounded-full px-3 text-xs font-bold shadow-md transition hover:bg-neutral-50"
             type="button"
             onClick={onBackToKorea}
           >
@@ -352,15 +352,15 @@ export function KoreaMap({
         ) : null}
         {shouldShowPickLocationNotice ? (
           <div
-            className={`absolute left-3 right-3 z-[455] flex min-h-12 items-center justify-between gap-3 rounded-2xl border border-[var(--color-border)] bg-[var(--color-panel-bg)] px-3 py-2 shadow-[var(--shadow-panel)] lg:left-4 lg:right-4 ${
+            className={`hbk-panel hbk-panel-shadow hbk-map-control-layer absolute left-3 right-3 flex min-h-12 items-center justify-between gap-3 rounded-2xl px-3 py-2 lg:left-4 lg:right-4 ${
               mapLevel === "seoul" ? "top-14 lg:top-16" : "top-3 lg:top-4"
             }`}
           >
-            <span className="text-sm font-extrabold text-[var(--color-text)]">
+            <span className="hbk-text text-sm font-extrabold">
               기록할 위치를 지도에서 선택하세요
             </span>
             <button
-              className="h-8 shrink-0 rounded-full border border-[var(--color-border)] bg-white px-3 text-xs font-extrabold text-[var(--color-text)]"
+              className="hbk-surface h-8 shrink-0 rounded-full px-3 text-xs font-extrabold"
               type="button"
               onClick={onCancelPickingLocation}
             >
@@ -500,17 +500,17 @@ export function KoreaMap({
           ) : null}
         </MapContainer>
         {isDraftLocationReady ? (
-          <div className="absolute bottom-3 left-3 right-3 z-[460] rounded-2xl border border-[var(--color-border)] bg-[var(--color-panel-bg)] p-3 shadow-[var(--shadow-panel)] lg:bottom-4 lg:left-4 lg:right-4">
+          <div className="hbk-panel hbk-panel-shadow hbk-map-control-layer absolute bottom-3 left-3 right-3 rounded-2xl p-3 lg:bottom-4 lg:left-4 lg:right-4">
             <div className="flex gap-2">
               <button
-                className="h-11 flex-1 rounded-xl bg-[var(--color-text)] px-3 text-sm font-extrabold text-[var(--color-card-bg)]"
+                className="h-11 flex-1 rounded-xl bg-neutral-950 px-3 text-sm font-extrabold text-white"
                 type="button"
                 onClick={onConfirmLocation}
               >
                 이 위치에 새 기록 작성
               </button>
               <button
-                className="h-11 rounded-xl border border-[var(--color-border)] bg-white px-3 text-sm font-extrabold text-[var(--color-text)]"
+                className="hbk-surface h-11 rounded-xl px-3 text-sm font-extrabold"
                 type="button"
                 onClick={onCancelPickingLocation}
               >
@@ -520,7 +520,7 @@ export function KoreaMap({
           </div>
         ) : null}
         {shouldShowSelectedRecordCard ? (
-          <div className="absolute inset-0 z-[470]">
+          <div className="hbk-map-card-layer absolute inset-0">
             <GoogleFeedCard
               record={selectedRecord}
               onClose={() => setHiddenRecordCardId(selectedRecord.id)}

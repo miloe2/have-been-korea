@@ -12,16 +12,16 @@ export function InstagramFeedCard({
   onSelectRecord,
 }: InstagramFeedCardProps) {
   return (
-    <article className="overflow-hidden rounded-lg border border-[var(--color-border)] bg-white">
+    <article className="hbk-surface overflow-hidden rounded-lg">
       <div className="flex items-center gap-2 p-3">
         <div className="grid size-9 place-items-center rounded-full bg-pink-50 text-pink-700">
           <Heart size={16} strokeWidth={2.4} aria-hidden="true" />
         </div>
         <div className="min-w-0 flex-1">
-          <h3 className="truncate text-sm font-extrabold text-[var(--color-text)]">
+          <h3 className="hbk-text truncate text-sm font-extrabold">
             {record.title}
           </h3>
-          <p className="truncate text-xs font-bold text-[var(--color-muted)]">
+          <p className="hbk-muted truncate text-xs font-bold">
             {record.regionName}
           </p>
         </div>
@@ -31,11 +31,11 @@ export function InstagramFeedCard({
       </div>
       <img className="aspect-square w-full object-cover" src={record.imageUrl} alt="" />
       <div className="p-3">
-        <div className="mb-2 flex gap-3 text-[var(--color-text)]">
+        <div className="hbk-text mb-2 flex gap-3">
           <Heart size={19} strokeWidth={2.4} aria-hidden="true" />
           <MessageCircle size={19} strokeWidth={2.4} aria-hidden="true" />
         </div>
-        <p className="line-clamp-2 text-sm leading-5 text-[var(--color-text)]">
+        <p className="hbk-text line-clamp-2 text-sm leading-5">
           {record.description}
         </p>
         <button

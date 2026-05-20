@@ -15,19 +15,14 @@
   # TODO
 
   ## Next
-  - Build a Google/Naver Maps-style personal place detail card for selected pins
-  - Show the selected pin detail as a mobile-friendly bottom sheet
-  - Support a feed-style list of records for the same place or region
-
-  ## Soon
-  - Add photo file upload preview
-    - Current MVP uses `imageUrl`
   - Add Google Places search/select flow
     - Search place names with Google Places Text Search or Autocomplete
     - Let the user choose the real place before saving a record
     - Save the selected Google place snapshot with the user's photo, memo, and visit date
     - Render feeds from the saved snapshot first, instead of calling Google again on every feed view
     - Keep the user's uploaded photo as the primary image
+
+  ## Soon
   - Detect the administrative region from the clicked map coordinate
     - Use GeoJSON point-in-polygon first
     - Consider reverse geocoding later if needed
@@ -47,7 +42,6 @@
     - Risk: region and clicked coordinate can mismatch
   - Empty-state guidance
     - Consider adding Incheon Airport as an onboarding/default example
-  - Landmark icons
   - Source-specific card layouts
     - Google/Naver/Kakao/Instagram style variants
   - Social viewing / other users' records
@@ -87,6 +81,18 @@
   - React Native design token cleanup
 
   ## DONE
+
+  ### 2026-05-19
+  - Google/Naver Maps-style personal place detail card for selected pins
+  - Selected pin detail as a mobile-friendly bottom sheet
+  - Photo file upload preview
+    - Current MVP stores object URLs in local state-backed records
+    - Later Firebase Storage should replace the object URL with a download URL
+  - Static landmark/topic icons on the map
+    - Added Seoul starter landmark/topic list with coordinates
+    - Rendered SVG-style map markers before Google Places integration
+    - Landmark markers act as record-start locations, not public POI detail cards
+    - Landmark click selects the coordinate and shows `Create record here`
 
   ### 2026-05-16
   - Mobile-first map layout

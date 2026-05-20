@@ -1,7 +1,4 @@
-Do not run build, lint, test, or dev server. Only modify the code and list manual verification commands.
-
 ## MVP-first Development
-
 This project is currently focused on shipping an MVP.
 
 Optimize for speed, simplicity, and correctness over long-term architecture.
@@ -16,3 +13,8 @@ Guidelines:
 - Leave refactoring and cleanup for later unless explicitly requested.
 
 When in doubt, choose the smallest working change.
+Do not run build, lint, test, or dev server. Only modify the code and list manual verification commands.
+
+## Design
+For any UI/UX, layout, styling, or component changes, read `DESIGN.md` first and follow it.
+

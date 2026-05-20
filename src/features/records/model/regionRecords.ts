@@ -12,7 +12,8 @@ export const regionRecords: RegionRecord[] = [
     lng: 126.9898,
     imageUrl:
       "https://images.unsplash.com/photo-1517154421773-0529f29ea451?auto=format&fit=crop&w=600&q=80",
-    sourceLabel: "Upload",
+    sourceType: "google",
+    sourceLabel: "Google",
     tags: ["카페", "산책", "한옥"],
   },
   {
@@ -26,7 +27,8 @@ export const regionRecords: RegionRecord[] = [
     lng: 126.9804,
     imageUrl:
       "https://images.unsplash.com/photo-1538485399081-7191377e8241?auto=format&fit=crop&w=600&q=80",
-    sourceLabel: "Upload",
+    sourceType: "naver",
+    sourceLabel: "Naver",
     tags: ["전시", "실내"],
   },
   {
@@ -40,7 +42,8 @@ export const regionRecords: RegionRecord[] = [
     lng: 129.1186,
     imageUrl:
       "https://images.unsplash.com/photo-1601621915196-2621bfb0cd6e?auto=format&fit=crop&w=600&q=80",
-    sourceLabel: "Kakao later",
+    sourceType: "instagram",
+    sourceLabel: "Instagram",
     tags: ["바다", "야경"],
   },
   {
@@ -54,7 +57,8 @@ export const regionRecords: RegionRecord[] = [
     lng: 126.9425,
     imageUrl:
       "https://images.unsplash.com/photo-1548115184-bc6544d06a58?auto=format&fit=crop&w=600&q=80",
-    sourceLabel: "Instagram later",
+    sourceType: "instagram",
+    sourceLabel: "Instagram",
     tags: ["자연", "걷기"],
   },
   {
@@ -68,7 +72,8 @@ export const regionRecords: RegionRecord[] = [
     lng: 128.5912,
     imageUrl:
       "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=600&q=80",
-    sourceLabel: "Upload",
+    sourceType: "google",
+    sourceLabel: "Google",
     tags: ["시장", "바다"],
   },
   {
@@ -82,7 +87,8 @@ export const regionRecords: RegionRecord[] = [
     lng: 127.0116,
     imageUrl:
       "https://images.unsplash.com/photo-1578645510447-e20b4311e3ce?auto=format&fit=crop&w=600&q=80",
-    sourceLabel: "Upload",
+    sourceType: "naver",
+    sourceLabel: "Naver",
     tags: ["역사", "산책"],
   },
 ];

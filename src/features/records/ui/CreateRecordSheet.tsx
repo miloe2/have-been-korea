@@ -1,7 +1,10 @@
-import { ImagePlus, Trash2, X } from "lucide-react";
+import { ImagePlus, Instagram, MapPinned, Search, Trash2, X } from "lucide-react";
 import type { FormEventHandler } from "react";
 
+import type { RecordSourceType } from "@/features/records/model/types";
+
 export type CreateRecordFormState = {
+  sourceType: RecordSourceType;
   title: string;
   description: string;
   date: string;
@@ -21,6 +24,16 @@ type CreateRecordSheetProps = {
   onSubmit: FormEventHandler<HTMLFormElement>;
   onUpdateForm: (formState: CreateRecordFormState) => void;
 };
+
+const sourceOptions: {
+  label: string;
+  type: RecordSourceType;
+  Icon: typeof Search;
+}[] = [
+  { label: "Google", type: "google", Icon: Search },
+  { label: "Naver", type: "naver", Icon: MapPinned },
+  { label: "Insta", type: "instagram", Icon: Instagram },
+];
 
 export function CreateRecordSheet({
   draftPosition,
@@ -68,6 +81,39 @@ export function CreateRecordSheet({
           <span className="flex h-11 items-center rounded-xl border border-[var(--color-border)] bg-[var(--color-chip-bg)] px-3 text-sm font-bold text-[var(--color-chip-text)]">
             {selectedRegionName}
           </span>
+        </div>
+
+        <div className="mb-3">
+          <span className="mb-1.5 block text-xs font-extrabold text-[var(--color-muted)]">
+            타입
+          </span>
+          <div className="grid grid-cols-3 gap-2">
+            {sourceOptions.map(({ label, type, Icon }) => {
+              const isSelected = formState.sourceType === type;
+
+              return (
+                <button
+                  key={type}
+                  className={`flex h-11 items-center justify-center gap-1.5 rounded-xl border px-2 text-xs font-extrabold ${
+                    isSelected
+                      ? "border-[var(--color-text)] bg-[var(--color-text)] text-[var(--color-card-bg)]"
+                      : "border-[var(--color-border)] bg-white text-[var(--color-text)]"
+                  }`}
+                  type="button"
+                  aria-pressed={isSelected}
+                  onClick={() =>
+                    onUpdateForm({
+                      ...formState,
+                      sourceType: type,
+                    })
+                  }
+                >
+                  <Icon size={15} strokeWidth={2.4} aria-hidden="true" />
+                  {label}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         <label className="mb-3 block">

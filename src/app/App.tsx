@@ -1,7 +1,7 @@
 import { Plus } from "lucide-react";
 import { type FormEvent, useEffect, useMemo, useRef, useState } from "react";
 
-import { BottomNav } from "@/features/navigation/ui/BottomNav";
+import { BottomNav, type AppTab } from "@/features/navigation/ui/BottomNav";
 import type { LandmarkTopic } from "@/features/records/model/landmarkTopics";
 import { regionRecords } from "@/features/records/model/regionRecords";
 import { selectableRegions } from "@/features/records/model/regions";
@@ -13,8 +13,15 @@ import {
   CreateRecordSheet,
   type CreateRecordFormState,
 } from "@/features/records/ui/CreateRecordSheet";
-import { GooglePlacePreview } from "@/features/records/ui/GooglePlacePreview";
+import { GoogleFeedCard } from "@/features/records/ui/GoogleFeedCard";
 import { KoreaMap } from "@/features/records/ui/KoreaMap";
+import { FeedScreen } from "@/screens/FeedScreen";
+
+const sourceLabelByType = {
+  google: "Google",
+  naver: "Naver",
+  instagram: "Instagram",
+} as const;
 
 export function App() {
   const [records, setRecords] = useState(regionRecords);
@@ -28,8 +35,10 @@ export function App() {
   const [isPickingLocation, setIsPickingLocation] = useState(false);
   const [isCreateFormOpen, setIsCreateFormOpen] = useState(false);
   const [isCreatePreviewOpen, setIsCreatePreviewOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<AppTab>("map");
   const [draftPosition, setDraftPosition] = useState<[number, number] | undefined>();
   const [formState, setFormState] = useState<CreateRecordFormState>({
+    sourceType: "google",
     title: "",
     description: "",
     date: new Date().toISOString().slice(0, 10),
@@ -75,7 +84,8 @@ export function App() {
           lat: draftPosition[0],
           lng: draftPosition[1],
           imageUrl: createPreviewImageUrl,
-          sourceLabel: "Preview",
+          sourceType: formState.sourceType,
+          sourceLabel: sourceLabelByType[formState.sourceType],
           tags: createPreviewTags,
         }
       : undefined;
@@ -153,6 +163,8 @@ export function App() {
 
     if (record) {
       setSelectedRegionCode(record.regionCode);
+      setMapLevel(record.regionCode.startsWith("11") ? "seoul" : "korea");
+      setActiveTab("map");
     }
   };
 
@@ -165,7 +177,20 @@ export function App() {
     setIsPickingLocation(true);
     setIsCreateFormOpen(false);
     setIsCreatePreviewOpen(false);
+    setActiveTab("map");
     setDraftPosition(undefined);
+  };
+
+  const handleSelectTab = (tab: AppTab) => {
+    setActiveTab(tab);
+    setIsCreatePreviewOpen(false);
+
+    if (tab !== "map") {
+      setIsPickingLocation(false);
+      setIsCreateFormOpen(false);
+      setDraftPosition(undefined);
+      resetCreateForm();
+    }
   };
 
   const handlePickLocation = (position: [number, number]) => {
@@ -178,6 +203,7 @@ export function App() {
     setIsPickingLocation(true);
     setIsCreateFormOpen(false);
     setIsCreatePreviewOpen(false);
+    setActiveTab("map");
     setFormState((currentFormState) => {
       if (currentFormState.photoPreviewUrl) {
         URL.revokeObjectURL(currentFormState.photoPreviewUrl);
@@ -188,6 +214,7 @@ export function App() {
       return {
         ...currentFormState,
         title: landmarkTopic.title,
+        sourceType: "google",
         description: "",
         imageUrl: "",
         photoFile: undefined,
@@ -218,7 +245,7 @@ export function App() {
     const record = {
       ...input,
       id: `local-${Date.now()}`,
-      sourceLabel: "Upload",
+      sourceLabel: sourceLabelByType[input.sourceType],
     };
 
     if (formState.photoPreviewUrl) {
@@ -255,6 +282,7 @@ export function App() {
       lat: draftPosition[0],
       lng: draftPosition[1],
       imageUrl,
+      sourceType: formState.sourceType,
       tags: formState.tags
         .split(",")
         .map((tag) => tag.trim())
@@ -279,54 +307,75 @@ export function App() {
         </button>
       </header>
 
-      <section
-        className="grid h-[calc(100svh_-_78px_-_env(safe-area-inset-bottom))] items-stretch lg:h-auto lg:items-start lg:gap-[18px] lg:grid-cols-[360px_minmax(0,1fr)]"
-        aria-label="방문 기록"
-      >
-        <div className="h-full min-h-0 lg:sticky lg:top-[18px]">
-          <KoreaMap
-            mapLevel={mapLevel}
-            selectedRegionCode={selectedRegionCode}
-            regionRecordCounts={regionRecordCounts}
-            records={records}
-            selectedRecordId={selectedRecordId}
-            draftPosition={draftPosition}
-            isPickingLocation={isPickingLocation || isCreateFormOpen}
-            isDraftLocationReady={Boolean(draftPosition) && !isCreateFormOpen}
-            onSelectRegion={handleSelectRegion}
-            onSelectRecord={handleSelectRecord}
-            onPickLocation={handlePickLocation}
-            onSelectLandmarkTopic={handleSelectLandmarkTopic}
-            onConfirmLocation={handleConfirmLocation}
-            onCancelPickingLocation={handleCancelCreateRecord}
-            onBackToKorea={handleBackToKorea}
-          />
-        </div>
-
-        <div className="contents lg:block lg:columns-1 lg:gap-[18px] xl:columns-2">
-          {isCreateFormOpen ? (
-            <CreateRecordSheet
+      {activeTab === "feed" ? (
+        <FeedScreen records={records} onSelectRecord={handleSelectRecord} />
+      ) : activeTab === "profile" ? (
+        <section className="h-[calc(100svh_-_78px)] px-4 py-4">
+          <div className="rounded-lg border border-[var(--color-border)] bg-white p-5">
+            <h2 className="text-xl font-extrabold text-[var(--color-text)]">
+              내 정보
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-[var(--color-muted)]">
+              로그인과 사용자별 기록은 TODO Later 단계입니다.
+            </p>
+          </div>
+        </section>
+      ) : (
+        <section
+          className="grid h-[calc(100svh_-_78px)] items-stretch lg:h-auto lg:items-start lg:gap-[18px] lg:grid-cols-[360px_minmax(0,1fr)]"
+          aria-label="방문 기록"
+        >
+          <div className="h-full min-h-0 lg:sticky lg:top-[18px]">
+            <KoreaMap
+              mapLevel={mapLevel}
+              selectedRegionCode={selectedRegionCode}
+              regionRecordCounts={regionRecordCounts}
+              records={records}
+              selectedRecordId={selectedRecordId}
               draftPosition={draftPosition}
-              formState={formState}
-              selectedRegionName={selectedRegion?.name ?? "지역"}
-              canPreview={Boolean(createPreviewRecord)}
-              onCancel={handleCancelCreateRecord}
-              onPreview={() => setIsCreatePreviewOpen(true)}
-              onSubmit={handleCreateRecord}
-              onUpdateForm={updateFormState}
+              isPickingLocation={isPickingLocation || isCreateFormOpen}
+              isDraftLocationReady={Boolean(draftPosition) && !isCreateFormOpen}
+              onSelectRegion={handleSelectRegion}
+              onSelectRecord={handleSelectRecord}
+              onPickLocation={handlePickLocation}
+              onSelectLandmarkTopic={handleSelectLandmarkTopic}
+              onConfirmLocation={handleConfirmLocation}
+              onCancelPickingLocation={handleCancelCreateRecord}
+              onBackToKorea={handleBackToKorea}
             />
-          ) : null}
-        </div>
-      </section>
+          </div>
+
+          <div className="contents lg:block lg:columns-1 lg:gap-[18px] xl:columns-2">
+            {isCreateFormOpen ? (
+              <CreateRecordSheet
+                draftPosition={draftPosition}
+                formState={formState}
+                selectedRegionName={selectedRegion?.name ?? "지역"}
+                canPreview={Boolean(createPreviewRecord)}
+                onCancel={handleCancelCreateRecord}
+                onPreview={() => setIsCreatePreviewOpen(true)}
+                onSubmit={handleCreateRecord}
+                onUpdateForm={updateFormState}
+              />
+            ) : null}
+          </div>
+        </section>
+      )}
       {isCreatePreviewOpen && createPreviewRecord ? (
         <div className="fixed inset-0 z-[1300]">
-          <GooglePlacePreview
-            record={createPreviewRecord}
-            onClose={() => setIsCreatePreviewOpen(false)}
-          />
+          <div className="absolute inset-0">
+            <GoogleFeedCard
+              record={createPreviewRecord}
+              onClose={() => setIsCreatePreviewOpen(false)}
+            />
+          </div>
         </div>
       ) : null}
-      <BottomNav onCreateRecord={handleOpenCreateForm} />
+      <BottomNav
+        activeTab={activeTab}
+        onSelectTab={handleSelectTab}
+        onCreateRecord={handleOpenCreateForm}
+      />
     </main>
   );
 }

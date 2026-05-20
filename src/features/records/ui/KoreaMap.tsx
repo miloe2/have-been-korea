@@ -22,7 +22,7 @@ import {
 } from "@/features/records/model/landmarkTopics";
 import { regionRecords } from "@/features/records/model/regionRecords";
 import type { RegionRecord } from "@/features/records/model/types";
-import { GooglePlacePreview } from "@/features/records/ui/GooglePlacePreview";
+import { GoogleFeedCard } from "@/features/records/ui/GoogleFeedCard";
 import {
   MARKER_PANE_Z_INDEX,
   createClusterIcon,
@@ -520,10 +520,12 @@ export function KoreaMap({
           </div>
         ) : null}
         {shouldShowSelectedRecordCard ? (
-          <GooglePlacePreview
-            record={selectedRecord}
-            onClose={() => setHiddenRecordCardId(selectedRecord.id)}
-          />
+          <div className="absolute inset-0 z-[470]">
+            <GoogleFeedCard
+              record={selectedRecord}
+              onClose={() => setHiddenRecordCardId(selectedRecord.id)}
+            />
+          </div>
         ) : null}
       </div>
     </div>

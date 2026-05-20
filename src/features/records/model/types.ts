@@ -1,3 +1,5 @@
+export type RecordSourceType = "google" | "naver" | "instagram";
+
 export type RegionRecord = {
   id: string;
   regionCode: string;
@@ -8,6 +10,7 @@ export type RegionRecord = {
   lat: number;
   lng: number;
   imageUrl: string;
+  sourceType: RecordSourceType;
   sourceLabel?: string;
   tags?: string[];
 };
@@ -21,6 +24,7 @@ export type CreateRegionRecordInput = {
   lat: number;
   lng: number;
   imageUrl: string;
+  sourceType: RecordSourceType;
   tags?: string[];
 };
 

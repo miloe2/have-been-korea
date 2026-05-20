@@ -37,6 +37,7 @@ type KoreaMapProps = {
   records: RegionRecord[];
   selectedRecordId: string | undefined;
   draftPosition: [number, number] | undefined;
+  shouldShowDraftMarker: boolean;
   isPickingLocation: boolean;
   isDraftLocationReady: boolean;
   onSelectRegion: (regionCode: string) => void;
@@ -110,6 +111,7 @@ const HOVER_STYLE: PathOptions = {
 const MAP_LANGUAGE = "en";
 const SEOUL_CLUSTER_POSITION: [number, number] = [37.56, 126.99];
 const SEOUL_TO_KOREA_ZOOM = 8;
+const SEOUL_DEFAULT_ZOOM_OFFSET = 1;
 
 function getFeaturePolygons(feature: ProvinceFeature): PolygonCoordinates[] {
   if (feature.geometry.type === "Polygon") {
@@ -267,6 +269,12 @@ function FitMapToLevel({ mapLevel }: { mapLevel: KoreaMapProps["mapLevel"] }) {
         padding: [18, 18],
       });
 
+      if (mapLevel === "seoul") {
+        map.setZoom(map.getZoom() + SEOUL_DEFAULT_ZOOM_OFFSET, {
+          animate: false,
+        });
+      }
+
       if (mapLevel === "korea") {
         map.panBy(KOREA_DEFAULT_PAN_OFFSET, { animate: false });
       }
@@ -294,6 +302,7 @@ export function KoreaMap({
   records,
   selectedRecordId,
   draftPosition,
+  shouldShowDraftMarker,
   isPickingLocation,
   isDraftLocationReady,
   onSelectRegion,
@@ -452,6 +461,10 @@ export function KoreaMap({
             name="landmark-markers"
             style={{ zIndex: MARKER_PANE_Z_INDEX.landmark }}
           >
+            <Pane
+              name="landmark-tooltips"
+              style={{ zIndex: MARKER_PANE_Z_INDEX.landmark + 20 }}
+            />
             {mapLevel === "seoul"
               ? landmarkTopics.map((landmarkTopic) => (
                   <Marker
@@ -459,11 +472,16 @@ export function KoreaMap({
                     eventHandlers={{
                       click: () => onSelectLandmarkTopic(landmarkTopic),
                     }}
-                    icon={createLandmarkIcon()}
+                    icon={createLandmarkIcon(landmarkTopic.iconKey)}
                     position={[landmarkTopic.lat, landmarkTopic.lng]}
                     title={landmarkTopic.title}
                   >
-                    <Tooltip direction="top" opacity={0.92}>
+                    <Tooltip
+                      className="landmark-map-tooltip"
+                      direction="top"
+                      opacity={0.92}
+                      pane="landmark-tooltips"
+                    >
                       {landmarkTopic.title}
                     </Tooltip>
                   </Marker>
@@ -489,7 +507,7 @@ export function KoreaMap({
               />
             ))}
           </Pane>
-          {draftPosition ? (
+          {shouldShowDraftMarker && draftPosition ? (
             <Pane
               name="draft-marker"
               style={{ zIndex: MARKER_PANE_Z_INDEX.draft }}

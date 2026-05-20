@@ -1,0 +1,22 @@
+<svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Namsan Tower icon">
+  <g stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M18 1.5V5"/>
+    <path d="M17.2 5H18.8L19.1 7.1H16.9L17.2 5Z"/>
+
+    <path d="M16.55 7.1H19.45L19.05 10.2H16.95L16.55 7.1Z"/>
+    <path d="M16.1 10.2H19.9L19.35 13.5H16.65L16.1 10.2Z"/>
+    <path d="M15.45 13.5H20.55L20.05 16.8H15.95L15.45 13.5Z"/>
+    <path d="M15 16.8H21V18.5H15V16.8Z"/>
+
+    <path d="M12.3 18.5H23.7V23.4H12.3V18.5Z"/>
+    <path d="M15.7 20.4V21.45"/>
+    <path d="M18 20.4V21.45"/>
+    <path d="M20.3 20.4V21.45"/>
+
+    <path d="M16.25 23.4H19.75L20.25 31.2H15.75L16.25 23.4Z"/>
+    <path d="M15.55 27.4H20.45"/>
+
+    <path d="M14.4 31.2H21.6V33.2H14.4V31.2Z"/>
+    <path d="M11.5 33.2H24.5V35.2H11.5V33.2Z"/>
+  </g>
+</svg>

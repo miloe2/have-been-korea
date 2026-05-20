@@ -5,7 +5,7 @@ export type LandmarkTopic = {
   regionName: string;
   lat: number;
   lng: number;
-  iconKey: "default";
+  iconKey: "default" | "namsan";
 };
 
 export const landmarkTopics: LandmarkTopic[] = [
@@ -34,7 +34,7 @@ export const landmarkTopics: LandmarkTopic[] = [
     title: "남산타워",
     lat: 37.5512,
     lng: 126.9882,
-    iconKey: "default",
+    iconKey: "namsan",
   },
   {
     id: "landmark-lotte-world",

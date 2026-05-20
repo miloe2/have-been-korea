@@ -111,14 +111,26 @@
       0 10px 20px rgba(15, 15, 15, 0.22);
   }
 
-  .landmark-map-dot {
+  .landmark-map-pin {
     display: grid;
-    width: 36px;
-    height: 36px;
+    width: 28px;
+    height: 28px;
     place-items: center;
-    border: 3px solid var(--color-card-bg);
-    border-radius: 999px;
-    background: #0f766e;
-    color: var(--color-card-bg);
+    transform: rotate(45deg);
+    border: 1px solid rgba(17, 17, 17, 0.3);
+    border-radius: 50% 50% 50% 6px;
+    background: rgba(255, 255, 255, 0.82);
+    color: var(--color-text);
+    box-shadow: 0 3px 8px rgba(17, 17, 17, 0.12);
+  }
+
+  .landmark-map-pin svg {
+    width: 15px;
+    height: 15px;
+    transform: rotate(-45deg);
+  }
+
+  .landmark-map-tooltip.leaflet-tooltip-top {
+    margin-top: -16px;
   }
 }

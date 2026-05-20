@@ -23,6 +23,8 @@ const sourceLabelByType = {
   instagram: "Instagram",
 } as const;
 
+type DraftLocationSource = "map" | "landmark";
+
 export function App() {
   const [records, setRecords] = useState(regionRecords);
   const [selectedRegionCode, setSelectedRegionCode] = useState<string | undefined>(
@@ -35,6 +37,8 @@ export function App() {
   const [isCreatePreviewOpen, setIsCreatePreviewOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<AppTab>("map");
   const [draftPosition, setDraftPosition] = useState<[number, number] | undefined>();
+  const [draftLocationSource, setDraftLocationSource] =
+    useState<DraftLocationSource>("map");
   const [formState, setFormState] = useState<CreateRecordFormState>({
     sourceType: "google",
     title: "",
@@ -77,7 +81,7 @@ export function App() {
           regionCode: selectedRegion.code,
           regionName: selectedRegion.name,
           title: createPreviewTitle,
-          description: formState.description.trim() || "아직 메모가 없습니다.",
+          description: formState.description.trim(),
           date: createPreviewDate,
           lat: draftPosition[0],
           lng: draftPosition[1],
@@ -177,6 +181,7 @@ export function App() {
     setIsCreatePreviewOpen(false);
     setActiveTab("map");
     setDraftPosition(undefined);
+    setDraftLocationSource("map");
   };
 
   const handleSelectTab = (tab: AppTab) => {
@@ -187,17 +192,20 @@ export function App() {
       setIsPickingLocation(false);
       setIsCreateFormOpen(false);
       setDraftPosition(undefined);
+      setDraftLocationSource("map");
       resetCreateForm();
     }
   };
 
   const handlePickLocation = (position: [number, number]) => {
     setDraftPosition(position);
+    setDraftLocationSource("map");
   };
 
   const handleSelectLandmarkTopic = (landmarkTopic: LandmarkTopic) => {
     setSelectedRegionCode(landmarkTopic.regionCode);
     setDraftPosition([landmarkTopic.lat, landmarkTopic.lng]);
+    setDraftLocationSource("landmark");
     setIsPickingLocation(true);
     setIsCreateFormOpen(false);
     setIsCreatePreviewOpen(false);
@@ -236,6 +244,7 @@ export function App() {
     setIsCreateFormOpen(false);
     setIsCreatePreviewOpen(false);
     setDraftPosition(undefined);
+    setDraftLocationSource("map");
     resetCreateForm();
   };
 
@@ -257,6 +266,7 @@ export function App() {
     setIsCreateFormOpen(false);
     setIsCreatePreviewOpen(false);
     setDraftPosition(undefined);
+    setDraftLocationSource("map");
     resetCreateForm({ keepPhotoPreview: Boolean(formState.photoPreviewUrl) });
   };
 
@@ -308,7 +318,7 @@ export function App() {
       {activeTab === "feed" ? (
         <FeedScreen records={records} onSelectRecord={handleSelectRecord} />
       ) : activeTab === "profile" ? (
-        <section className="h-[calc(100svh_-_78px)] px-4 py-4">
+        <section className="h-[calc(100svh_-_56px)] px-4 py-4">
           <div className="rounded-lg border border-[var(--color-border)] bg-white p-5">
             <h2 className="text-xl font-extrabold text-[var(--color-text)]">
               내 정보
@@ -320,7 +330,7 @@ export function App() {
         </section>
       ) : (
         <section
-          className="grid h-[calc(100svh_-_78px)] items-stretch lg:h-auto lg:items-start lg:gap-[18px] lg:grid-cols-[360px_minmax(0,1fr)]"
+          className="grid h-[calc(100svh_-_56px)] items-stretch lg:h-auto lg:items-start lg:gap-[18px] lg:grid-cols-[360px_minmax(0,1fr)]"
           aria-label="방문 기록"
         >
           <div className="h-full min-h-0 lg:sticky lg:top-[18px]">
@@ -331,6 +341,7 @@ export function App() {
               records={records}
               selectedRecordId={selectedRecordId}
               draftPosition={draftPosition}
+              shouldShowDraftMarker={draftLocationSource === "map"}
               isPickingLocation={isPickingLocation || isCreateFormOpen}
               isDraftLocationReady={Boolean(draftPosition) && !isCreateFormOpen}
               onSelectRegion={handleSelectRegion}

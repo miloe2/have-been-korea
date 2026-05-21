@@ -1,5 +1,5 @@
 import { ImagePlus, Instagram, MapPinned, Search, Trash2, X } from "lucide-react";
-import type { FormEventHandler } from "react";
+import type { SubmitEventHandler } from "react";
 
 import type { RecordSourceType } from "@/features/records/model/types";
 
@@ -21,7 +21,7 @@ type CreateRecordSheetProps = {
   canPreview: boolean;
   onCancel: () => void;
   onPreview: () => void;
-  onSubmit: FormEventHandler<HTMLFormElement>;
+  onSubmit: SubmitEventHandler<HTMLFormElement>;
   onUpdateForm: (formState: CreateRecordFormState) => void;
 };
 

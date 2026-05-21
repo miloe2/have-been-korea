@@ -46,7 +46,7 @@ function NaverFeedCard({
   onSelectRecord: (recordId: string) => void;
 }) {
   return (
-    <article className="rounded-lg border border-emerald-100 bg-white p-3.5">
+    <article className="rounded-lg border border-emerald-100 bg-white p-4">
       <div className="flex gap-3">
         <img
           className="size-24 shrink-0 rounded-md object-cover"

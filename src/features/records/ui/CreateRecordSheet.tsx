@@ -1,11 +1,22 @@
 import { ImagePlus, Instagram, MapPinned, Search, Trash2, X } from "lucide-react";
-import type { SubmitEventHandler } from "react";
+import { useEffect, useRef, useState, type SubmitEventHandler } from "react";
 
-import type { RecordSourceType } from "@/features/records/model/types";
+import {
+  createGooglePlacesSessionToken,
+  fetchGooglePlaceSnapshot,
+  fetchGooglePlaceSuggestions,
+  type GooglePlaceSuggestion,
+  type GooglePlacesSessionToken,
+} from "@/features/records/model/googlePlaces";
+import type {
+  GooglePlaceSnapshot,
+  RecordSourceType,
+} from "@/features/records/model/types";
 
 export type CreateRecordFormState = {
   sourceType: RecordSourceType;
   title: string;
+  googlePlace?: GooglePlaceSnapshot;
   description: string;
   date: string;
   imageUrl: string;
@@ -21,6 +32,7 @@ type CreateRecordSheetProps = {
   canPreview: boolean;
   onCancel: () => void;
   onPreview: () => void;
+  onSelectGooglePlace: (googlePlace: GooglePlaceSnapshot) => void;
   onSubmit: SubmitEventHandler<HTMLFormElement>;
   onUpdateForm: (formState: CreateRecordFormState) => void;
 };
@@ -42,12 +54,122 @@ export function CreateRecordSheet({
   canPreview,
   onCancel,
   onPreview,
+  onSelectGooglePlace,
   onSubmit,
   onUpdateForm,
 }: CreateRecordSheetProps) {
+  const sessionTokenRef = useRef<GooglePlacesSessionToken | undefined>(
+    undefined,
+  );
+  const [placeSuggestions, setPlaceSuggestions] = useState<
+    GooglePlaceSuggestion[]
+  >([]);
+  const [placeSearchStatus, setPlaceSearchStatus] = useState<
+    "idle" | "loading" | "error"
+  >("idle");
+  const [placeSearchMessage, setPlaceSearchMessage] = useState("");
   const hasPhoto = Boolean(
     formState.photoPreviewUrl || formState.imageUrl.trim(),
   );
+  const selectedGooglePlace = formState.googlePlace;
+
+  useEffect(() => {
+    const query = formState.title.trim();
+
+    if (formState.sourceType !== "google") {
+      setPlaceSuggestions([]);
+      setPlaceSearchStatus("idle");
+      setPlaceSearchMessage("");
+      return;
+    }
+
+    if (
+      selectedGooglePlace &&
+      query === selectedGooglePlace.placeName.trim()
+    ) {
+      setPlaceSuggestions([]);
+      setPlaceSearchStatus("idle");
+      setPlaceSearchMessage("");
+      return;
+    }
+
+    if (query.length < 2) {
+      setPlaceSuggestions([]);
+      setPlaceSearchStatus("idle");
+      setPlaceSearchMessage("");
+      return;
+    }
+
+    let isActive = true;
+    const timeoutId = window.setTimeout(() => {
+      setPlaceSearchStatus("loading");
+      setPlaceSearchMessage("");
+
+      void (async () => {
+        try {
+          if (!sessionTokenRef.current) {
+            sessionTokenRef.current = await createGooglePlacesSessionToken();
+          }
+
+          const suggestions = await fetchGooglePlaceSuggestions(
+            query,
+            sessionTokenRef.current,
+          );
+
+          if (!isActive) {
+            return;
+          }
+
+          setPlaceSuggestions(suggestions);
+          setPlaceSearchStatus("idle");
+          setPlaceSearchMessage(
+            suggestions.length > 0 ? "" : "검색 결과가 없습니다.",
+          );
+        } catch (error) {
+          if (!isActive) {
+            return;
+          }
+
+          setPlaceSuggestions([]);
+          setPlaceSearchStatus("error");
+          setPlaceSearchMessage(
+            error instanceof Error
+              ? error.message
+              : "장소 검색에 실패했습니다.",
+          );
+        }
+      })();
+    }, 250);
+
+    return () => {
+      isActive = false;
+      window.clearTimeout(timeoutId);
+    };
+  }, [formState.sourceType, formState.title, selectedGooglePlace]);
+
+  const handleSelectPlaceSuggestion = async (
+    suggestion: GooglePlaceSuggestion,
+  ) => {
+    setPlaceSearchStatus("loading");
+    setPlaceSearchMessage("");
+
+    try {
+      const googlePlace = await fetchGooglePlaceSnapshot(suggestion);
+
+      onSelectGooglePlace(googlePlace);
+      setPlaceSuggestions([]);
+      setPlaceSearchStatus("idle");
+      setPlaceSearchMessage("");
+      sessionTokenRef.current = undefined;
+    } catch (error) {
+      setPlaceSearchStatus("error");
+      setPlaceSearchMessage(
+        error instanceof Error
+          ? error.message
+          : "장소 상세 정보를 가져오지 못했습니다.",
+      );
+    }
+  };
 
   return (
     <form
@@ -105,6 +227,8 @@ export function CreateRecordSheet({
                     onUpdateForm({
                       ...formState,
                       sourceType: type,
+                      googlePlace:
+                        type === "google" ? formState.googlePlace : undefined,
                     })
                   }
                 >
@@ -116,23 +240,72 @@ export function CreateRecordSheet({
           </div>
         </div>
 
-        <label className="mb-3 block">
+        <div className="mb-3">
           <span className="hbk-muted mb-2 block text-xs font-extrabold">
             장소
           </span>
-          <input
-            className="hbk-surface h-11 w-full rounded-xl px-3 text-sm"
-            required
-            value={formState.title}
-            onChange={(event) =>
-              onUpdateForm({
-                ...formState,
-                title: event.target.value,
-              })
-            }
-            placeholder="성수 카페골목"
-          />
-        </label>
+          <div className="relative">
+            <input
+              className="hbk-surface h-11 w-full rounded-xl px-3 text-sm"
+              required
+              value={formState.title}
+              onChange={(event) =>
+                onUpdateForm({
+                  ...formState,
+                  title: event.target.value,
+                  googlePlace: undefined,
+                })
+              }
+              placeholder="성수 카페골목"
+            />
+            {placeSuggestions.length > 0 ? (
+              <div className="hbk-panel hbk-panel-shadow absolute left-0 right-0 top-12 z-[1400] overflow-hidden rounded-xl">
+                {placeSuggestions.map((suggestion) => (
+                  <button
+                    key={suggestion.placeId}
+                    className="hbk-soft-border block w-full border-b px-3 py-2 text-left last:border-b-0"
+                    type="button"
+                    onClick={() => void handleSelectPlaceSuggestion(suggestion)}
+                  >
+                    <span className="hbk-text block truncate text-sm font-extrabold">
+                      {suggestion.text}
+                    </span>
+                    {suggestion.secondaryText ? (
+                      <span className="hbk-muted mt-0.5 block truncate text-xs">
+                        {suggestion.secondaryText}
+                      </span>
+                    ) : null}
+                  </button>
+                ))}
+              </div>
+            ) : null}
+          </div>
+          {placeSearchStatus === "loading" ? (
+            <p className="hbk-muted mt-2 text-xs font-bold">장소 검색 중...</p>
+          ) : placeSearchMessage ? (
+            <p
+              className={`mt-2 text-xs font-bold ${
+                placeSearchStatus === "error"
+                  ? "text-red-600"
+                  : "hbk-muted"
+              }`}
+            >
+              {placeSearchMessage}
+            </p>
+          ) : null}
+          {selectedGooglePlace ? (
+            <div className="hbk-chip mt-2 rounded-xl px-3 py-2 text-xs font-bold">
+              <p className="hbk-text truncate">{selectedGooglePlace.placeName}</p>
+              <p className="hbk-muted mt-1 truncate">
+                {selectedGooglePlace.placeAddress}
+              </p>
+              <p className="hbk-muted mt-1">
+                평점 {selectedGooglePlace.placeRating ?? "-"} · 리뷰{" "}
+                {selectedGooglePlace.placeReviewCount ?? "-"}
+              </p>
+            </div>
+          ) : null}
+        </div>
 
         <div className="mb-3">
           <span className="hbk-muted mb-2 block text-xs font-extrabold">
@@ -265,7 +438,12 @@ export function CreateRecordSheet({
         </button>
         <button
           className="h-11 flex-1 rounded-xl bg-neutral-950 px-3 text-sm font-extrabold text-white disabled:cursor-not-allowed disabled:opacity-35"
-          disabled={!draftPosition || !hasPhoto || !formState.title.trim()}
+          disabled={
+            !draftPosition ||
+            !hasPhoto ||
+            !formState.title.trim() ||
+            !formState.googlePlace
+          }
           type="submit"
         >
           저장

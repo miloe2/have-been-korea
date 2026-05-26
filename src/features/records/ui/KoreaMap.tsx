@@ -1,5 +1,5 @@
-import { ArrowLeft } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { ArrowLeft, Search } from "lucide-react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import {
   GeoJSON,
   MapContainer,
@@ -20,7 +20,17 @@ import {
   landmarkTopics,
   type LandmarkTopic,
 } from "@/features/records/model/landmarkTopics";
-import type { RegionRecord } from "@/features/records/model/types";
+import {
+  createGooglePlacesSessionToken,
+  fetchGooglePlaceSnapshot,
+  fetchGooglePlaceSuggestions,
+  type GooglePlaceSuggestion,
+  type GooglePlacesSessionToken,
+} from "@/features/records/model/googlePlaces";
+import type {
+  GooglePlaceSnapshot,
+  RegionRecord,
+} from "@/features/records/model/types";
 import { GoogleFeedCard } from "@/features/records/ui/GoogleFeedCard";
 import {
   MARKER_PANE_Z_INDEX,
@@ -43,6 +53,7 @@ type KoreaMapProps = {
   onSelectRegion: (regionCode: string) => void;
   onSelectRecord: (recordId: string) => void;
   onPickLocation: (position: [number, number]) => void;
+  onSelectGooglePlace: (googlePlace: GooglePlaceSnapshot) => void;
   onSelectLandmarkTopic: (landmarkTopic: LandmarkTopic) => void;
   onConfirmLocation: () => void;
   onCancelPickingLocation: () => void;
@@ -257,10 +268,20 @@ function ZoomOutLevelEvents({
   return null;
 }
 
-function FitMapToLevel({ mapLevel }: { mapLevel: KoreaMapProps["mapLevel"] }) {
+function FitMapToLevel({
+  enabled,
+  mapLevel,
+}: {
+  enabled: boolean;
+  mapLevel: KoreaMapProps["mapLevel"];
+}) {
   const map = useMap();
 
   useEffect(() => {
+    if (!enabled) {
+      return;
+    }
+
     const bounds = mapLevel === "seoul" ? seoulBounds : KOREA_BOUNDS;
     const fitMap = () => {
       map.invalidateSize();
@@ -290,9 +311,196 @@ function FitMapToLevel({ mapLevel }: { mapLevel: KoreaMapProps["mapLevel"] }) {
       window.clearTimeout(timeoutId);
       observer.disconnect();
     };
-  }, [map, mapLevel]);
+  }, [enabled, map, mapLevel]);
 
   return null;
+}
+
+function PanToDraftPosition({
+  draftPosition,
+  enabled,
+}: {
+  draftPosition: [number, number] | undefined;
+  enabled: boolean;
+}) {
+  const map = useMap();
+
+  useEffect(() => {
+    if (!enabled || !draftPosition) {
+      return;
+    }
+
+    map.flyTo(draftPosition, Math.max(map.getZoom(), 12), {
+      animate: true,
+      duration: 0.5,
+    });
+  }, [draftPosition, enabled, map]);
+
+  return null;
+}
+
+function MapPlaceSearch({
+  mapLevel,
+  onBackToKorea,
+  onSelectGooglePlace,
+}: {
+  mapLevel: KoreaMapProps["mapLevel"];
+  onBackToKorea: () => void;
+  onSelectGooglePlace: (googlePlace: GooglePlaceSnapshot) => void;
+}) {
+  const sessionTokenRef = useRef<GooglePlacesSessionToken | undefined>(
+    undefined,
+  );
+  const [query, setQuery] = useState("");
+  const [suggestions, setSuggestions] = useState<GooglePlaceSuggestion[]>([]);
+  const [status, setStatus] = useState<"idle" | "loading" | "error">("idle");
+  const [message, setMessage] = useState("");
+
+  useEffect(() => {
+    const trimmedQuery = query.trim();
+
+    if (trimmedQuery.length < 2) {
+      setSuggestions([]);
+      setStatus("idle");
+      setMessage("");
+      return;
+    }
+
+    let isActive = true;
+    const timeoutId = window.setTimeout(() => {
+      setStatus("loading");
+      setMessage("");
+
+      void (async () => {
+        try {
+          if (!sessionTokenRef.current) {
+            sessionTokenRef.current = await createGooglePlacesSessionToken();
+          }
+
+          const nextSuggestions = await fetchGooglePlaceSuggestions(
+            trimmedQuery,
+            sessionTokenRef.current,
+          );
+
+          if (!isActive) {
+            return;
+          }
+
+          setSuggestions(nextSuggestions);
+          setStatus("idle");
+          setMessage(
+            nextSuggestions.length > 0 ? "" : "검색 결과가 없습니다.",
+          );
+        } catch (error) {
+          if (!isActive) {
+            return;
+          }
+
+          setSuggestions([]);
+          setStatus("error");
+          setMessage(
+            error instanceof Error
+              ? error.message
+              : "장소 검색에 실패했습니다.",
+          );
+        }
+      })();
+    }, 250);
+
+    return () => {
+      isActive = false;
+      window.clearTimeout(timeoutId);
+    };
+  }, [query]);
+
+  const handleSelectSuggestion = async (suggestion: GooglePlaceSuggestion) => {
+    setStatus("loading");
+    setMessage("");
+
+    try {
+      const googlePlace = await fetchGooglePlaceSnapshot(suggestion);
+
+      onSelectGooglePlace(googlePlace);
+      setQuery(googlePlace.placeName);
+      setSuggestions([]);
+      setStatus("idle");
+      setMessage("");
+      sessionTokenRef.current = undefined;
+    } catch (error) {
+      setStatus("error");
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : "장소 상세 정보를 가져오지 못했습니다.",
+      );
+    }
+  };
+
+  return (
+    <div className="hbk-map-control-layer absolute left-3 right-3 top-3 lg:left-4 lg:right-4 lg:top-4">
+      <div className="flex gap-2">
+        {mapLevel === "seoul" ? (
+          <button
+            className="hbk-surface inline-flex h-11 shrink-0 items-center gap-1.5 rounded-xl px-3 text-xs font-extrabold shadow-md transition hover:bg-neutral-50"
+            type="button"
+            onClick={onBackToKorea}
+          >
+            <ArrowLeft size={15} aria-hidden="true" />
+            Korea
+          </button>
+        ) : null}
+        <div className="relative min-w-0 flex-1">
+          <Search
+            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-muted)]"
+            size={17}
+            strokeWidth={2.4}
+            aria-hidden="true"
+          />
+          <input
+            className="hbk-surface h-11 w-full rounded-xl pl-9 pr-3 text-sm font-bold shadow-md"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="장소 검색"
+            aria-label="장소 검색"
+          />
+          {suggestions.length > 0 ? (
+            <div className="hbk-panel hbk-panel-shadow absolute left-0 right-0 top-12 overflow-hidden rounded-xl">
+              {suggestions.map((suggestion) => (
+                <button
+                  key={suggestion.placeId}
+                  className="hbk-soft-border block w-full border-b px-3 py-2 text-left last:border-b-0"
+                  type="button"
+                  onClick={() => void handleSelectSuggestion(suggestion)}
+                >
+                  <span className="hbk-text block truncate text-sm font-extrabold">
+                    {suggestion.text}
+                  </span>
+                  {suggestion.secondaryText ? (
+                    <span className="hbk-muted mt-0.5 block truncate text-xs">
+                      {suggestion.secondaryText}
+                    </span>
+                  ) : null}
+                </button>
+              ))}
+            </div>
+          ) : null}
+        </div>
+      </div>
+      {status === "loading" ? (
+        <p className="hbk-panel hbk-panel-shadow mt-2 inline-flex rounded-full px-3 py-1.5 text-xs font-bold">
+          장소 검색 중...
+        </p>
+      ) : message ? (
+        <p
+          className={`hbk-panel hbk-panel-shadow mt-2 inline-flex rounded-full px-3 py-1.5 text-xs font-bold ${
+            status === "error" ? "text-red-600" : ""
+          }`}
+        >
+          {message}
+        </p>
+      ) : null}
+    </div>
+  );
 }
 
 export function KoreaMap({
@@ -308,6 +516,7 @@ export function KoreaMap({
   onSelectRegion,
   onSelectRecord,
   onPickLocation,
+  onSelectGooglePlace,
   onSelectLandmarkTopic,
   onConfirmLocation,
   onCancelPickingLocation,
@@ -348,20 +557,15 @@ export function KoreaMap({
         className="hbk-map-canvas relative h-full min-h-0 overflow-hidden"
         aria-label={mapTitle}
       >
-        {mapLevel === "seoul" ? (
-          <button
-            className="hbk-surface hbk-map-control-layer absolute left-4 top-4 inline-flex h-9 items-center gap-2 rounded-full px-3 text-xs font-bold shadow-md transition hover:bg-neutral-50"
-            type="button"
-            onClick={onBackToKorea}
-          >
-            <ArrowLeft size={16} aria-hidden="true" />
-            Korea
-          </button>
-        ) : null}
+        <MapPlaceSearch
+          mapLevel={mapLevel}
+          onBackToKorea={onBackToKorea}
+          onSelectGooglePlace={onSelectGooglePlace}
+        />
         {shouldShowPickLocationNotice ? (
           <div
             className={`hbk-panel hbk-panel-shadow hbk-map-control-layer absolute left-3 right-3 flex min-h-12 items-center justify-between gap-3 rounded-2xl px-3 py-2 lg:left-4 lg:right-4 ${
-              mapLevel === "seoul" ? "top-14 lg:top-16" : "top-3 lg:top-4"
+              mapLevel === "seoul" ? "top-28 lg:top-28" : "top-16 lg:top-20"
             }`}
           >
             <span className="hbk-text text-sm font-extrabold">
@@ -389,7 +593,11 @@ export function KoreaMap({
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
             url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
           />
-          <FitMapToLevel mapLevel={mapLevel} />
+          <FitMapToLevel enabled={!draftPosition} mapLevel={mapLevel} />
+          <PanToDraftPosition
+            draftPosition={draftPosition}
+            enabled={shouldShowDraftMarker}
+          />
           <PickLocationEvents
             enabled={isPickingLocation}
             onPickLocation={onPickLocation}

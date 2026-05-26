@@ -15,6 +15,18 @@ export function GoogleFeedCard({
   onClose,
   onSelectRecord,
 }: GoogleFeedCardProps) {
+  const hasGoogleRating = typeof record.placeRating === "number";
+  const ratingLabel =
+    typeof record.placeRating === "number"
+      ? record.placeRating.toFixed(1)
+      : "평점 없음";
+  const reviewCountLabel =
+    typeof record.placeReviewCount === "number"
+      ? `(${record.placeReviewCount.toLocaleString("ko-KR")})`
+      : "";
+  const addressLabel =
+    record.placeAddress ?? `${record.regionName} · ${record.date}`;
+
   return (
     <article className="flex h-full w-full flex-col overflow-hidden bg-white">
       <div
@@ -33,13 +45,20 @@ export function GoogleFeedCard({
               {record.title}
             </h2>
             <p className="mt-1 flex items-center gap-1 text-xs leading-4 text-neutral-500">
-              <span>4.6</span>
-              <span className="text-amber-400">★★★★★</span>
-              <span>(252)</span>
+              <span>{ratingLabel}</span>
+              {hasGoogleRating ? (
+                <span className="text-amber-400">★★★★★</span>
+              ) : null}
+              {reviewCountLabel ? <span>{reviewCountLabel}</span> : null}
             </p>
             <p className="mt-1 truncate text-xs leading-4 text-neutral-500">
-              서울특별시 · {record.regionName} · {record.date}
+              {addressLabel}
             </p>
+            {record.googlePlaceId ? (
+              <p className="mt-1 truncate text-[11px] leading-4 text-neutral-400">
+                Google Places · {record.placeFetchedAt?.slice(0, 10)}
+              </p>
+            ) : null}
           </div>
           <div className="flex items-start gap-1">
             <button

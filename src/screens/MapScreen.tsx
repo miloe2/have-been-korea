@@ -9,10 +9,13 @@ import {
 } from "react";
 
 import type { LandmarkTopic } from "@/features/records/model/landmarkTopics";
+import provinceGeoJson from "@/features/records/data/skorea-provinces.geo.json";
+import seoulDistrictGeoJson from "@/features/records/data/seoul-districts.geo.json";
 import { regionRecords } from "@/features/records/model/regionRecords";
 import { selectableRegions } from "@/features/records/model/regions";
 import type {
   CreateRegionRecordInput,
+  GooglePlaceSnapshot,
   RegionRecord,
 } from "@/features/records/model/types";
 import {
@@ -29,6 +32,18 @@ const sourceLabelByType = {
 } as const;
 
 type DraftLocationSource = "map" | "landmark";
+type GeoJsonPosition = [number, number];
+type GeoJsonPolygon = GeoJsonPosition[][];
+type GeoJsonMultiPolygon = GeoJsonPolygon[];
+type RegionFeature = {
+  properties: {
+    code: string;
+  };
+  geometry: {
+    type: "Polygon" | "MultiPolygon";
+    coordinates: GeoJsonPolygon | GeoJsonMultiPolygon;
+  };
+};
 
 type MapScreenProps = {
   records: RegionRecord[];
@@ -38,6 +53,55 @@ type MapScreenProps = {
   onStartCreateRecordHandled: () => void;
   setRecords: Dispatch<SetStateAction<RegionRecord[]>>;
 };
+
+const regionFeatures = [
+  ...(seoulDistrictGeoJson.features as unknown as RegionFeature[]),
+  ...(provinceGeoJson.features as unknown as RegionFeature[]),
+];
+
+function isPointInRing(
+  [pointLng, pointLat]: GeoJsonPosition,
+  ring: GeoJsonPosition[],
+) {
+  let isInside = false;
+
+  for (let index = 0, prevIndex = ring.length - 1; index < ring.length; prevIndex = index++) {
+    const [lng, lat] = ring[index];
+    const [prevLng, prevLat] = ring[prevIndex];
+    const intersects =
+      lat > pointLat !== prevLat > pointLat &&
+      pointLng <
+        ((prevLng - lng) * (pointLat - lat)) / (prevLat - lat) + lng;
+
+    if (intersects) {
+      isInside = !isInside;
+    }
+  }
+
+  return isInside;
+}
+
+function getFeaturePolygons(feature: RegionFeature) {
+  if (feature.geometry.type === "Polygon") {
+    return [feature.geometry.coordinates as GeoJsonPolygon];
+  }
+
+  return feature.geometry.coordinates as GeoJsonMultiPolygon;
+}
+
+function findRegionCodeByPosition(lat: number, lng: number) {
+  const point: GeoJsonPosition = [lng, lat];
+
+  return regionFeatures.find((feature) =>
+    getFeaturePolygons(feature).some((polygon) => {
+      if (!isPointInRing(point, polygon[0])) {
+        return false;
+      }
+
+      return polygon.slice(1).every((hole) => !isPointInRing(point, hole));
+    }),
+  )?.properties.code;
+}
 
 export function MapScreen({
   records,
@@ -69,6 +133,7 @@ export function MapScreen({
   const [formState, setFormState] = useState<CreateRecordFormState>({
     sourceType: "google",
     title: "",
+    googlePlace: undefined,
     description: "",
     date: new Date().toISOString().slice(0, 10),
     imageUrl: "",
@@ -102,7 +167,8 @@ export function MapScreen({
     selectedRegion &&
     draftPosition &&
     createPreviewImageUrl &&
-    createPreviewTitle
+    createPreviewTitle &&
+    formState.googlePlace
       ? {
           id: "create-preview",
           regionCode: selectedRegion.code,
@@ -116,6 +182,7 @@ export function MapScreen({
           sourceType: formState.sourceType,
           sourceLabel: sourceLabelByType[formState.sourceType],
           tags: createPreviewTags,
+          ...formState.googlePlace,
         }
       : undefined;
 
@@ -167,6 +234,7 @@ export function MapScreen({
       return {
         ...currentFormState,
         title: "",
+        googlePlace: undefined,
         description: "",
         imageUrl: "",
         photoFile: undefined,
@@ -249,6 +317,7 @@ export function MapScreen({
       return {
         ...currentFormState,
         title: landmarkTopic.title,
+        googlePlace: undefined,
         sourceType: "google",
         description: "",
         imageUrl: "",
@@ -299,13 +368,50 @@ export function MapScreen({
     resetCreateForm({ keepPhotoPreview: Boolean(formState.photoPreviewUrl) });
   };
 
+  const updateGooglePlaceDraft = (googlePlace: GooglePlaceSnapshot) => {
+    const regionCode = findRegionCodeByPosition(
+      googlePlace.placeLat,
+      googlePlace.placeLng,
+    );
+
+    setDraftPosition([googlePlace.placeLat, googlePlace.placeLng]);
+    setDraftLocationSource("map");
+    if (regionCode) {
+      setSelectedRegionCode(regionCode);
+      setMapLevel(regionCode.startsWith("11") ? "seoul" : "korea");
+    }
+    setFormState((currentFormState) => ({
+      ...currentFormState,
+      title: googlePlace.placeName,
+      sourceType: "google",
+      googlePlace,
+    }));
+  };
+
+  const handleSelectMapGooglePlace = (googlePlace: GooglePlaceSnapshot) => {
+    updateGooglePlaceDraft(googlePlace);
+    setIsPickingLocation(true);
+    setIsCreateFormOpen(false);
+    setIsCreatePreviewOpen(false);
+  };
+
+  const handleSelectFormGooglePlace = (googlePlace: GooglePlaceSnapshot) => {
+    updateGooglePlaceDraft(googlePlace);
+  };
+
   const handleCreateRecord: SubmitEventHandler<HTMLFormElement> = (event) => {
     event.preventDefault();
 
     const imageUrl = formState.photoPreviewUrl || formState.imageUrl.trim();
     const title = formState.title.trim();
 
-    if (!selectedRegion || !draftPosition || !imageUrl || !title) {
+    if (
+      !selectedRegion ||
+      !draftPosition ||
+      !imageUrl ||
+      !title ||
+      !formState.googlePlace
+    ) {
       return;
     }
 
@@ -319,6 +425,7 @@ export function MapScreen({
       lng: draftPosition[1],
       imageUrl,
       sourceType: formState.sourceType,
+      ...formState.googlePlace,
       tags: formState.tags
         .split(",")
         .map((tag) => tag.trim())
@@ -346,6 +453,7 @@ export function MapScreen({
             onSelectRegion={handleSelectRegion}
             onSelectRecord={handleSelectRecord}
             onPickLocation={handlePickLocation}
+            onSelectGooglePlace={handleSelectMapGooglePlace}
             onSelectLandmarkTopic={handleSelectLandmarkTopic}
             onConfirmLocation={handleConfirmLocation}
             onCancelPickingLocation={handleCancelCreateRecord}
@@ -362,6 +470,7 @@ export function MapScreen({
               canPreview={Boolean(createPreviewRecord)}
               onCancel={handleCancelCreateRecord}
               onPreview={() => setIsCreatePreviewOpen(true)}
+              onSelectGooglePlace={handleSelectFormGooglePlace}
               onSubmit={handleCreateRecord}
               onUpdateForm={updateFormState}
             />
